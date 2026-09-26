@@ -18,6 +18,10 @@ Notebooks — основной источник экспериментальны
    вычислительные ресурсы**, отдельными notebooks проверяются SPLADE и ColBERT.
    Они не включаются в основной pipeline без статистически подтверждённого
    прироста на зафиксированном holdout.
+6. `notebooks/07_supervised_ltr_experiments.ipynb` — supervised selection из
+   широкого union; текущий принятый результат `0.84058` на test.
+7. `notebooks/08_finetuned_dense_experiments.ipynb` — оценка leakage-safe LoRA
+   domain adaptation русского USER-bge-m3 после Kaggle-прогона.
 
 SPLADE-stage использует русский checkpoint `naver/neuclir22-splade-ru` и
 контролируемые абляции pruning, chunking и global/local retrieval. Лицензия
