@@ -12,8 +12,12 @@ Notebooks — основной источник экспериментальны
 1. `notebooks/01_eda.ipynb` — качество данных, длины текстов, повторы и фильтры.
 2. `notebooks/02_validation_design.ipynb` — единый стратифицированный holdout.
 3. `notebooks/03_bm25_experiments.ipynb` — BM25, metadata channels и language ablation.
-4. Dense/RRF notebook — русский embedder, fixed chunking и RRF (следующий этап).
-5. SPLADE notebook добавляется только при подтверждённом потенциале Recall@50.
+4. `notebooks/05_dense_rrf_experiments.ipynb` — русский embedder, fixed
+   chunking, BM25+dense RRF и парные статистические тесты.
+5. Если после RRF остаётся измеримый запас Recall@50 **и позволяют доступные
+   вычислительные ресурсы**, отдельными notebooks проверяются SPLADE и ColBERT.
+   Они не включаются в основной pipeline без статистически подтверждённого
+   прироста на зафиксированном holdout.
 
 До выбора лучшего эксперимента production-сервис не строится. Код в `src/` —
 не сервис, а небольшие тестируемые исследовательские примитивы, общие для
@@ -74,4 +78,3 @@ jupyter nbconvert --to notebook --execute notebooks/03_bm25_experiments.ipynb --
 
 Финальный список реально использованных моделей фиксируется в dense notebook и
 run metadata.
-
