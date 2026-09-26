@@ -32,6 +32,19 @@ checkpoint — CC BY-NC-SA 4.0; это допустимо для данного 
 не сервис, а небольшие тестируемые исследовательские примитивы, общие для
 notebooks и batch inference.
 
+## Latency guardrail
+
+Исследовательский warm guardrail на текущем ноутбуке: end-to-end `p95 ≤ 500 ms`
+при `batch=1`. Целевой production stretch на GPU остаётся `p95 ≤ 100 ms`.
+Время включает preprocessing, query encoding, все принятые retrieval-каналы,
+фильтры, LTR features, CatBoost и fusion; startup, загрузка индексов и сеть
+измеряются отдельно. Конфигурация лежит в `config/latency_guardrails.json`.
+
+Первый формальный замер оптимизированного one-pass BM25: `p95=128.59 ms` на
+Intel Core Ultra 7 155H, 500 запросов. Полный end-to-end guardrail пока имеет
+статус `partial`: dense GPU и LTR будут добавлены после стабилизации fine-tuned
+канала. Запуск: `PYTHONPATH=src python scripts/benchmark_latency.py`.
+
 ## Ключевые решения EDA
 
 - `item_infm_params_text` и `item_description_raw` длинные, поэтому dense-поиск

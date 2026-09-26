@@ -57,10 +57,7 @@ class SparseBM25:
         """Return row indices and BM25 scores in descending order."""
         if self.vectorizer is None or self.matrix is None:
             raise RuntimeError("Call fit() or load() before search()")
-        query_vector = self.vectorizer.transform([query])
-        if query_vector.nnz:
-            query_vector.data[:] = 1.0
-        scores = np.asarray((self.matrix @ query_vector.T).toarray()).ravel()
+        scores = self.score(query)
         if allowed_mask is not None:
             scores = np.where(allowed_mask, scores, -np.inf)
         valid_count = int(np.isfinite(scores).sum())
@@ -70,6 +67,15 @@ class SparseBM25:
         candidate = np.argpartition(scores, -k)[-k:]
         order = candidate[np.argsort(scores[candidate])[::-1]]
         return order, scores[order]
+
+    def score(self, query: str) -> np.ndarray:
+        """Compute one corpus score vector for reuse by global/local channels."""
+        if self.vectorizer is None or self.matrix is None:
+            raise RuntimeError("Call fit() or load() before score()")
+        query_vector = self.vectorizer.transform([query])
+        if query_vector.nnz:
+            query_vector.data[:] = 1.0
+        return np.asarray((self.matrix @ query_vector.T).toarray(), dtype=np.float32).ravel()
 
     def score_many(self, queries: list[str]) -> np.ndarray:
         """Score a query batch in one sparse multiplication (docs × queries)."""

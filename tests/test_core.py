@@ -1,4 +1,7 @@
+import numpy as np
+
 from avito_retrieval.filters import requested_min_rating
+from avito_retrieval.bm25 import SparseBM25
 from avito_retrieval.fusion import reciprocal_rank_fusion, unique_top_k
 from avito_retrieval.metrics import recall_at_k
 from avito_retrieval.language import dominant_script
@@ -12,6 +15,14 @@ def test_unique_and_rrf() -> None:
 
 def test_recall() -> None:
     assert recall_at_k({"q": ["a", "x"]}, {"q": {"a", "b"}}, 2) == 0.5
+
+
+def test_bm25_reusable_score_vector() -> None:
+    index = SparseBM25(min_df=1).fit(["ремонт телефона", "ремонт автомобиля", "маникюр"])
+    rows, scores = index.search("ремонт", top_k=2)
+    full = index.score("ремонт")
+    assert set(rows) == {0, 1}
+    assert np.allclose(scores, full[rows])
 
 
 def test_rating_parser() -> None:

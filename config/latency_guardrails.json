@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "research_laptop": {
+    "warm_p95_ms": 500.0,
+    "batch_size": 1,
+    "minimum_measured_queries": 500
+  },
+  "production_gpu_stretch": {
+    "warm_p95_ms": 100.0,
+    "batch_size": 1
+  },
+  "protocol": {
+    "include": [
+      "query_normalization",
+      "query_encoding",
+      "all_accepted_retrieval_channels",
+      "hard_filters",
+      "ltr_feature_building",
+      "catboost_prediction",
+      "fusion_and_top50"
+    ],
+    "exclude": [
+      "process_startup",
+      "model_and_index_loading",
+      "network_transport"
+    ],
+    "warmup_queries": 25,
+    "cuda_synchronize_before_and_after_timing": true,
+    "report": ["mean_ms", "p50_ms", "p95_ms", "p99_ms", "max_ms"]
+  }
+}
