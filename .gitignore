@@ -21,4 +21,4 @@ venv/
 
 # Generated submissions except the requested final file in the project root.
 submissions/
-
+answer_*.csv

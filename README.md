@@ -82,10 +82,19 @@ Oracle recall объединения BM25 и dense кандидатов на tes
 есть после RRF остаётся `0.1317` измеримого запаса. Поэтому следующий
 эксперимент — SPLADE, затем, если позволяют вычислительные ресурсы, ColBERT.
 
+SPLADE ablation выбрала `q32/d192`, четыре chunks и local-weight `2.0` только
+на dev. Все эти инженерные решения подтвердились на test после Holm correction,
+но добавление SPLADE к BM25+dense не подтвердилось: test Recall@50 вырос с
+`0.80920` до `0.81199`, paired delta `+0.00279`, 97.5% bootstrap CI
+`[-0.00673; 0.01223]`, one-sided randomization `p=0.26584`. Поэтому SPLADE не
+заменяет текущий `answer.csv`; следующий независимый класс модели — ColBERT.
+
 ## Лицензии внешних моделей
 
 - `deepvk/USER-bge-m3` — Apache-2.0, русский sentence encoder для semantic search.
 - `intfloat/multilingual-e5-small` — MIT, лёгкий multilingual control baseline.
+- `naver/neuclir22-splade-ru` — CC BY-NC-SA 4.0, русский learned-sparse
+  retriever; исследован, но не принят в финальный ensemble.
 
 Финальный список реально использованных моделей фиксируется в dense notebook и
 run metadata.
