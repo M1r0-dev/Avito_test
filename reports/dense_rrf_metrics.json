@@ -1,0 +1,63 @@
+{
+  "models": [
+    "deepvk/USER-bge-m3",
+    "intfloat/multilingual-e5-small"
+  ],
+  "selected_dense": "USER_4_chunks",
+  "rrf_k": 20,
+  "dense_weight": 1.25,
+  "test_gain": 0.06133768352365421,
+  "oracle_union_recall": 0.9408646003262643,
+  "comparison": [
+    {
+      "method": "BM25",
+      "dev": 0.7529227841218054,
+      "test": 0.7478656878738444,
+      "full": 0.750394235997825
+    },
+    {
+      "method": "USER_4_chunks",
+      "dev": 0.7734910277324633,
+      "test": 0.7628058727569331,
+      "full": 0.7681484502446982
+    },
+    {
+      "method": "RRF (20, 1.25)",
+      "dev": 0.8314301250679718,
+      "test": 0.8092033713974986,
+      "full": 0.8203167482327353
+    }
+  ],
+  "paired_tests": {
+    "USER_4_vs_1_chunk_test": {
+      "mean_delta": 0.037262098966829804,
+      "ci_low": 0.022240348015225665,
+      "ci_high": 0.05229846383904286,
+      "p_value_greater": 4.999750012499375e-05,
+      "n_queries": 1226
+    },
+    "USER_vs_E5_first_chunk_test": {
+      "mean_delta": -0.0008836324089178892,
+      "ci_low": -0.018760195758564437,
+      "ci_high": 0.017128874388254486,
+      "p_value_greater": 0.5367731613419329,
+      "n_queries": 1226
+    },
+    "RRF_vs_BM25_test": {
+      "mean_delta": 0.061337683523654166,
+      "ci_low": 0.04411296900489396,
+      "ci_high": 0.07907830342577488,
+      "p_value_greater": 4.999750012499375e-05,
+      "n_queries": 1226
+    },
+    "dense_local_RRF_vs_global_test": {
+      "mean_delta": 0.4621669385535617,
+      "ci_low": 0.43412180532898315,
+      "ci_high": 0.48992659053833604,
+      "p_value_greater": 4.999750012499375e-05,
+      "n_queries": 1226
+    }
+  },
+  "advanced_retrieval_recommended": true,
+  "advanced_retrieval_requires_available_compute": true
+}

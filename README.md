@@ -67,9 +67,15 @@ jupyter nbconvert --to notebook --execute notebooks/02_validation_design.ipynb -
 jupyter nbconvert --to notebook --execute notebooks/03_bm25_experiments.ipynb --inplace
 ```
 
-Текущая стратифицированная контрольная точка filter-aware BM25:
-`Recall@50 = 0.7495`. Она будет сравниваться с dense-only и BM25+dense RRF на
-том же manifest.
+На стратифицированном holdout filter-aware BM25 даёт `Recall@50 = 0.7504`,
+USER-bge-m3 с четырьмя fixed chunks — `0.7681`, а настроенный только на dev
+BM25+dense RRF — `0.8203`. На независимой половине holdout прирост RRF над
+BM25 равен `+0.0613`, 95% paired bootstrap CI `[0.0441; 0.0791]`,
+one-sided randomization `p < 0.00005`.
+
+Oracle recall объединения BM25 и dense кандидатов на test равен `0.9409`, то
+есть после RRF остаётся `0.1317` измеримого запаса. Поэтому следующий
+эксперимент — SPLADE, затем, если позволяют вычислительные ресурсы, ColBERT.
 
 ## Лицензии внешних моделей
 
