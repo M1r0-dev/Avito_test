@@ -19,7 +19,8 @@ import pandas as pd
 import torch
 from sentence_transformers import SentenceTransformer
 
-MODEL_NAME = "deepvk/USER-bge-m3"
+RUSSIAN_MODEL = "deepvk/USER-bge-m3"
+CONTROL_MODEL = "intfloat/multilingual-e5-small"
 QUERY_COLUMNS = [
     "search_query", "search_location_id", "search_is_delivery_search",
     "search_infm_params_text", "search_category",
@@ -43,9 +44,10 @@ def tokenize(value: object) -> list[str]:
     return TOKEN_RE.findall(clean(value))
 
 
-def make_passages(items: pd.DataFrame) -> tuple[list[str], np.ndarray]:
+def make_passages(items: pd.DataFrame) -> tuple[list[str], np.ndarray, np.ndarray]:
     passages: list[str] = []
     item_rows: list[int] = []
+    chunk_numbers: list[int] = []
     step = CHUNK_WORDS - CHUNK_OVERLAP
     for item_row, row in enumerate(items.itertuples(index=False)):
         title = clean(row.item_title_raw)
@@ -59,7 +61,12 @@ def make_passages(items: pd.DataFrame) -> tuple[list[str], np.ndarray]:
             # USER-bge-m3 was trained without E5-style query/passage prefixes.
             passages.append(f"{title}. {body}".strip())
             item_rows.append(item_row)
-    return passages, np.asarray(item_rows, dtype=np.int32)
+            chunk_numbers.append(chunk_no)
+    return (
+        passages,
+        np.asarray(item_rows, dtype=np.int32),
+        np.asarray(chunk_numbers, dtype=np.int8),
+    )
 
 
 def query_text(row: pd.Series) -> str:
@@ -167,6 +174,7 @@ def item_rankings(
     passage_item_rows: np.ndarray,
     chunk_indices: np.ndarray,
     local_chunk_indices: list[np.ndarray],
+    prefix: str,
 ) -> pd.DataFrame:
     item_ids = items.item_id.astype(str).to_numpy()
     categories = items.item_category_id.to_numpy()
@@ -206,8 +214,8 @@ def item_rankings(
         records.append({
             "query_key": str(query.query_key),
             "split": query.split,
-            "dense_global": " ".join(global_ids[:TOP_ITEMS]),
-            "dense_local": " ".join(local_ids[:TOP_ITEMS]),
+            f"{prefix}_global": " ".join(global_ids[:TOP_ITEMS]),
+            f"{prefix}_local": " ".join(local_ids[:TOP_ITEMS]),
         })
     return pd.DataFrame(records)
 
@@ -252,9 +260,15 @@ def main() -> None:
         [validation, benchmark[QUERY_COLUMNS + ["query_key", "split"]]], ignore_index=True
     )
 
-    passages, passage_item_rows = make_passages(items)
-    print(f"passages={len(passages):,}; avg/item={len(passages)/len(items):.2f}")
-    model = SentenceTransformer(MODEL_NAME)
+    passages, passage_item_rows, chunk_numbers = make_passages(items)
+    passage_count = len(passages)
+    first_mask = chunk_numbers == 0
+    first_passages = [passages[i] for i in np.flatnonzero(first_mask)]
+    first_item_rows = passage_item_rows[first_mask]
+    print(f"passages={passage_count:,}; avg/item={passage_count/len(items):.2f}")
+
+    # Main Russian-focused model: full fixed chunking.
+    model = SentenceTransformer(RUSSIAN_MODEL)
     model.max_seq_length = 256
     passage_embeddings = encode_multi_gpu(model, passages, batch_size=64)
     del passages
@@ -273,8 +287,51 @@ def main() -> None:
         all_queries, query_embeddings, passage_embeddings, passage_item_rows, items
     )
     rankings = item_rankings(
-        all_queries, items, passage_item_rows, chunk_indices, local_chunk_indices
+        all_queries, items, passage_item_rows, chunk_indices, local_chunk_indices, "dense"
     )
+
+    # Chunking ablation with exactly the same USER embeddings/model: first chunk
+    # only is deterministic truncation, while all chunks test passage retrieval.
+    first_embeddings = passage_embeddings[first_mask]
+    first_chunk_indices, _ = gpu_top_chunks(query_embeddings, first_embeddings)
+    first_local_indices = gpu_local_chunks(
+        all_queries, query_embeddings, first_embeddings, first_item_rows, items
+    )
+    user_first = item_rankings(
+        all_queries, items, first_item_rows, first_chunk_indices, first_local_indices,
+        "user_first",
+    )
+    rankings = rankings.merge(user_first, on=["query_key", "split"], validate="one_to_one")
+    del passage_embeddings, first_embeddings, query_embeddings
+    torch.cuda.empty_cache()
+    gc.collect()
+
+    # Model ablation on the identical first-chunk corpus. E5 uses its required
+    # asymmetric prefixes; USER does not. This isolates model from chunking.
+    e5_model = SentenceTransformer(CONTROL_MODEL)
+    e5_model.max_seq_length = 256
+    e5_passages = [f"passage: {text}" for text in first_passages]
+    e5_embeddings = encode_multi_gpu(e5_model, e5_passages, batch_size=192)
+    del e5_passages, first_passages
+    gc.collect()
+    e5_queries = e5_model.encode(
+        [f"query: {query_text(row)}" for _, row in all_queries.iterrows()],
+        batch_size=256,
+        device="cuda:0",
+        normalize_embeddings=True,
+        show_progress_bar=True,
+    ).astype(np.float32)
+    del e5_model
+    torch.cuda.empty_cache()
+    e5_chunk_indices, _ = gpu_top_chunks(e5_queries, e5_embeddings)
+    e5_local_indices = gpu_local_chunks(
+        all_queries, e5_queries, e5_embeddings, first_item_rows, items
+    )
+    e5_first = item_rankings(
+        all_queries, items, first_item_rows, e5_chunk_indices, e5_local_indices,
+        "e5_first",
+    )
+    rankings = rankings.merge(e5_first, on=["query_key", "split"], validate="one_to_one")
     rankings.to_parquet(output / "dense_rankings.parquet", index=False)
 
     selected = labels.rename(columns={"eval_query_id": "query_key"})
@@ -282,9 +339,9 @@ def main() -> None:
         output / "validation_labels.parquet", index=False
     )
     run_info = {
-        "model": MODEL_NAME,
+        "models": [RUSSIAN_MODEL, CONTROL_MODEL],
         "items": len(items),
-        "passages": len(passages),
+        "passages": passage_count,
         "queries": len(all_queries),
         "chunk_words": CHUNK_WORDS,
         "overlap": CHUNK_OVERLAP,
