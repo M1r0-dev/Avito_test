@@ -49,6 +49,7 @@ def paired_recall_test(
     query_ids: Sequence[str] | None = None,
     n_resamples: int = 20_000,
     seed: int = 42,
+    confidence: float = 0.95,
 ) -> PairedTestResult:
     """Compare Recall@k with paired bootstrap CI and sign-randomization test.
 
@@ -56,6 +57,8 @@ def paired_recall_test(
     Sign randomization is exact under exchangeability; Monte Carlo is used for
     practical speed and includes the observed sample via the +1 correction.
     """
+    if not 0 < confidence < 1:
+        raise ValueError("confidence must be between 0 and 1")
     cand = per_query_recall(candidate, relevant, k=k, query_ids=query_ids)
     base = per_query_recall(baseline, relevant, k=k, query_ids=query_ids)
     ids = sorted(set(cand) & set(base))
@@ -78,7 +81,8 @@ def paired_recall_test(
     randomized = np.concatenate(random_means)
     observed = float(differences.mean())
     p_value = float((1 + np.count_nonzero(randomized >= observed)) / (n_resamples + 1))
-    low, high = np.quantile(bootstrap, [0.025, 0.975])
+    alpha = 1 - confidence
+    low, high = np.quantile(bootstrap, [alpha / 2, 1 - alpha / 2])
     return PairedTestResult(observed, float(low), float(high), p_value, len(ids))
 
 
@@ -95,4 +99,3 @@ def wilson_interval(successes: int, trials: int, confidence: float = 0.95) -> tu
     center = (proportion + z**2 / (2 * trials)) / denominator
     margin = z * np.sqrt(proportion * (1 - proportion) / trials + z**2 / (4 * trials**2)) / denominator
     return float(center - margin), float(center + margin)
-

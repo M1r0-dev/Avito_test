@@ -17,8 +17,9 @@
 # Все варианты получают один checkpoint и одинаковые тексты. Это позволяет
 # отделить влияние инженерных решений от выбора модели:
 #
-# 1. `q32/d64` против `q64/d64` — вклад query pruning.
-# 2. `q64/d64` против `q64/d192` — вклад document pruning.
+# 1. Полный `q32/q64 × d64/d192` — главные эффекты и взаимодействие query и
+#    document pruning без смешения двух факторов.
+# 2. Победитель полного factorial выбирается только по dev Recall@50.
 # 3. first chunk против максимум четырёх fixed chunks — эффект chunking именно
 #    для SPLADE, а не перенос вывода из dense-эксперимента.
 # 4. global против global+local — эффект географического канала.
@@ -335,11 +336,12 @@ def main() -> None:
     variants = [
         ("splade_q32_d64", documents_64, queries_32, passage_item_rows),
         ("splade_q64_d64", documents_64, queries_64, passage_item_rows),
+        ("splade_q32_d192", documents_192, queries_32, passage_item_rows),
         ("splade_q64_d192", documents_192, queries_64, passage_item_rows),
         (
-            "splade_first",
+            "splade_first_q32_d192",
             documents_192[first_mask],
-            queries_64,
+            queries_32,
             passage_item_rows[first_mask],
         ),
     ]

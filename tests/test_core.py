@@ -31,5 +31,10 @@ def test_paired_statistics() -> None:
     worse = {"q1": ["x"], "q2": ["b"]}
     result = paired_recall_test(better, worse, truth, n_resamples=200, seed=1)
     assert result.mean_delta == 0.5
+    stricter = paired_recall_test(
+        better, worse, truth, n_resamples=200, seed=1, confidence=0.975
+    )
+    assert stricter.ci_low <= result.ci_low
+    assert stricter.ci_high >= result.ci_high
     low, high = wilson_interval(95, 100)
     assert low < 0.95 < high
