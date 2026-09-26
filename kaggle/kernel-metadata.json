@@ -1,5 +1,5 @@
 {
-  "id": "m1r0tvorxc/avito-dense-candidate-retrieval",
+  "id": "m1r0tvorxc/avito-russian-dense-candidate-retrieval",
   "title": "Avito Russian Dense Candidate Retrieval",
   "code_file": "04_dense_gpu_experiment.ipynb",
   "language": "python",
