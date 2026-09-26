@@ -1,0 +1,185 @@
+{
+  "candidate_pool": {
+    "pool_width_per_channel": 200,
+    "BM25+dense_union": 0.9318923327895595,
+    "BM25+dense+SPLADE_union": 0.9376019575856444
+  },
+  "selection": [
+    {
+      "features": "history",
+      "best_iteration": 195,
+      "tune_recall": 0.8241042345276873
+    },
+    {
+      "features": "content",
+      "best_iteration": 92,
+      "tune_recall": 0.7953311617806732
+    },
+    {
+      "features": "rank",
+      "best_iteration": 58,
+      "tune_recall": 0.743756786102063
+    }
+  ],
+  "selected_features": "history",
+  "selected_iterations": 195,
+  "tune_ablations": {
+    "content_vs_rank": {
+      "mean_delta": 0.0515743756786102,
+      "ci_low": 0.029315960912052116,
+      "ci_high": 0.07654723127035831,
+      "p_value_greater": 4.999750012499375e-05,
+      "n_queries": 307
+    },
+    "history_vs_content": {
+      "mean_delta": 0.028773072747014117,
+      "ci_low": 0.0010857763300760048,
+      "ci_high": 0.05808903365906624,
+      "p_value_greater": 0.030598470076496177,
+      "n_queries": 307
+    }
+  },
+  "baseline_test_recall": 0.8092033713974986,
+  "ltr_test_recall": 0.84057911908646,
+  "distance_to_0_9": 0.05942088091354003,
+  "primary_alpha": 0.0125,
+  "bootstrap_confidence": 0.9875,
+  "primary_test": {
+    "mean_delta": 0.03137574768896139,
+    "ci_low": 0.010535617183251769,
+    "ci_high": 0.05278692563893424,
+    "p_value_greater": 0.00024998750062496874,
+    "n_queries": 1226
+  },
+  "primary_confirmed": true,
+  "slice_metrics": [
+    {
+      "slice": "has_filters",
+      "value": "False",
+      "queries": 773,
+      "baseline": 0.8211513583441138,
+      "ltr": 0.8544200086244071,
+      "delta": 0.033268650280293355
+    },
+    {
+      "slice": "has_filters",
+      "value": "True",
+      "queries": 453,
+      "baseline": 0.7888153053715967,
+      "ltr": 0.8169610007358351,
+      "delta": 0.028145695364238388
+    },
+    {
+      "slice": "local_pool_bucket",
+      "value": "0",
+      "queries": 213,
+      "baseline": 0.4624413145539906,
+      "ltr": 0.5563380281690141,
+      "delta": 0.0938967136150235
+    },
+    {
+      "slice": "local_pool_bucket",
+      "value": "1-99",
+      "queries": 21,
+      "baseline": 0.8571428571428571,
+      "ltr": 0.7619047619047619,
+      "delta": -0.09523809523809523
+    },
+    {
+      "slice": "local_pool_bucket",
+      "value": "100-499",
+      "queries": 106,
+      "baseline": 0.8679245283018868,
+      "ltr": 0.8773584905660378,
+      "delta": 0.009433962264150941
+    },
+    {
+      "slice": "local_pool_bucket",
+      "value": "10000+",
+      "queries": 272,
+      "baseline": 0.7941176470588235,
+      "ltr": 0.8338235294117647,
+      "delta": 0.03970588235294126
+    },
+    {
+      "slice": "local_pool_bucket",
+      "value": "2000-9999",
+      "queries": 277,
+      "baseline": 0.9082430806257521,
+      "ltr": 0.9485559566787004,
+      "delta": 0.04031287605294831
+    },
+    {
+      "slice": "local_pool_bucket",
+      "value": "500-1999",
+      "queries": 337,
+      "baseline": 0.9376854599406528,
+      "ltr": 0.93026706231454,
+      "delta": -0.007418397626112738
+    },
+    {
+      "slice": "query_frequency_bucket",
+      "value": "1",
+      "queries": 189,
+      "baseline": 0.8677248677248677,
+      "ltr": 0.8518518518518519,
+      "delta": -0.015873015873015817
+    },
+    {
+      "slice": "query_frequency_bucket",
+      "value": "2-5",
+      "queries": 231,
+      "baseline": 0.7878787878787878,
+      "ltr": 0.8008658008658008,
+      "delta": 0.012987012987012991
+    },
+    {
+      "slice": "query_frequency_bucket",
+      "value": "21+",
+      "queries": 599,
+      "baseline": 0.7931274346132443,
+      "ltr": 0.8423205342237062,
+      "delta": 0.04919309961046192
+    },
+    {
+      "slice": "query_frequency_bucket",
+      "value": "6-20",
+      "queries": 207,
+      "baseline": 0.8260869565217391,
+      "ltr": 0.8695652173913043,
+      "delta": 0.04347826086956519
+    },
+    {
+      "slice": "positive_bucket",
+      "value": "1",
+      "queries": 1132,
+      "baseline": 0.8127208480565371,
+      "ltr": 0.8409893992932862,
+      "delta": 0.028268551236749095
+    },
+    {
+      "slice": "positive_bucket",
+      "value": "2",
+      "queries": 68,
+      "baseline": 0.7647058823529411,
+      "ltr": 0.8308823529411765,
+      "delta": 0.06617647058823539
+    },
+    {
+      "slice": "positive_bucket",
+      "value": "3-5",
+      "queries": 25,
+      "baseline": 0.78,
+      "ltr": 0.8486666666666666,
+      "delta": 0.06866666666666654
+    },
+    {
+      "slice": "positive_bucket",
+      "value": "6+",
+      "queries": 1,
+      "baseline": 0.5833333333333334,
+      "ltr": 0.8333333333333334,
+      "delta": 0.25
+    }
+  ]
+}

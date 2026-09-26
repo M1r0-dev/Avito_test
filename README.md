@@ -87,7 +87,15 @@ SPLADE ablation выбрала `q32/d192`, четыре chunks и local-weight `
 но добавление SPLADE к BM25+dense не подтвердилось: test Recall@50 вырос с
 `0.80920` до `0.81199`, paired delta `+0.00279`, 97.5% bootstrap CI
 `[-0.00673; 0.01223]`, one-sided randomization `p=0.26584`. Поэтому SPLADE не
-заменяет текущий `answer.csv`; следующий независимый класс модели — ColBERT.
+заменяет текущий `answer.csv`. Перед дорогим ColBERT проверяются supervised
+selection, дообученный bi-encoder и cross-encoder.
+
+Следующий supervised LTR этап обучает CatBoostRanker выбирать 50 items из
+top-200 union BM25+dense+SPLADE. Leakage-safe click history исключает все exact
+validation query signatures. На test Recall@50 вырос с `0.80920` до `0.84058`:
+paired delta `+0.03138`, 98.75% CI `[0.01054; 0.05279]`, `p=0.00025` при
+скорректированном пороге `0.0125`. Результат принят и записан в `answer.csv`,
+но до исследовательской цели `0.9` остаётся `0.05942`.
 
 ## Лицензии внешних моделей
 
