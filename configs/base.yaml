@@ -1,0 +1,31 @@
+seed: 42
+top_k: 50
+
+text:
+  # Long parameters + descriptions are split into passages. Only the short
+  # title is repeated; parameters can themselves contain thousands of words.
+  chunk_words: 140
+  chunk_overlap_words: 30
+  max_chunks_per_item: 4
+
+bm25:
+  k1: 1.5
+  b: 0.75
+  min_df: 2
+  max_features: 350000
+  retrieve_per_channel: 250
+
+dense:
+  # Russian-focused 0.4B sentence encoder trained on symmetric and asymmetric
+  # Russian retrieval data. It does not use E5 query:/passage: prefixes.
+  model_name: deepvk/USER-bge-m3
+  batch_size: 64
+  retrieve_chunks: 300
+  normalize_embeddings: true
+
+fusion:
+  rrf_k: 60
+  # Location is a preferred channel, not a global hard filter.
+  local_channel_weight: 1.15
+  bm25_weight: 1.0
+  dense_weight: 1.0

@@ -1,0 +1,24 @@
+# Raw competition data and generated model artefacts are local-only.
+dataset/*.parquet
+artifacts/
+models/
+
+# Keep lightweight reports, but ignore regenerated binary figures.
+reports/figures/*.png
+
+# Python / notebooks / editors.
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+.venv/
+venv/
+.env
+.idea/
+.vscode/
+
+# Generated submissions except the requested final file in the project root.
+submissions/
+

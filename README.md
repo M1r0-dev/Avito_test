@@ -1,0 +1,77 @@
+# Avito candidate retrieval
+
+Исследовательское решение задачи кандидатогенерации: для каждого поискового
+запроса вернуть до 50 `item_id` из корпуса и максимизировать macro Recall@50.
+Все модели работают локально, без внешних inference API.
+
+## Порядок исследования
+
+Notebooks — основной источник экспериментальных решений. В каждом описаны
+гипотеза, метод, польза для задачи, ограничения и критерий принятия результата.
+
+1. `notebooks/01_eda.ipynb` — качество данных, длины текстов, повторы и фильтры.
+2. `notebooks/02_validation_design.ipynb` — единый стратифицированный holdout.
+3. `notebooks/03_bm25_experiments.ipynb` — BM25, metadata channels и language ablation.
+4. Dense/RRF notebook — русский embedder, fixed chunking и RRF (следующий этап).
+5. SPLADE notebook добавляется только при подтверждённом потенциале Recall@50.
+
+До выбора лучшего эксперимента production-сервис не строится. Код в `src/` —
+не сервис, а небольшие тестируемые исследовательские примитивы, общие для
+notebooks и batch inference.
+
+## Ключевые решения EDA
+
+- `item_infm_params_text` и `item_description_raw` длинные, поэтому dense-поиск
+  работает по fixed passages и агрегирует passage ranks обратно в уникальные items.
+- Ненулевая категория безопасна как hard-filter; значение `0` означает отсутствие
+  ограничения.
+- Локация не является глобальным hard-filter: примерно 16.9% train positives
+  находятся в другой локации. Используются global и local retrieval channels.
+- Russian/Cyrillic-only фильтр отклонён на holdout: корпус уже на 99.87%
+  кириллический, а hard-filter теряет объявления с латинскими брендами.
+
+Подробности и числа: `reports/EDA.md`.
+
+## Данные
+
+Положите локально, не добавляя в Git:
+
+```text
+dataset/
+├── train.parquet
+├── benchmark_queries.parquet
+└── benchmark_items.parquet
+```
+
+Raw Parquet, индексы, embeddings, Kaggle staging и промежуточные submissions
+игнорируются Git.
+
+## Установка
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -e '.[dev]'
+pytest
+```
+
+## Воспроизведение текущего baseline
+
+```bash
+PYTHONPATH=src python scripts/build_bm25.py
+jupyter nbconvert --to notebook --execute notebooks/02_validation_design.ipynb --inplace
+jupyter nbconvert --to notebook --execute notebooks/03_bm25_experiments.ipynb --inplace
+```
+
+Текущая стратифицированная контрольная точка filter-aware BM25:
+`Recall@50 = 0.7495`. Она будет сравниваться с dense-only и BM25+dense RRF на
+том же manifest.
+
+## Лицензии внешних моделей
+
+- `deepvk/USER-bge-m3` — Apache-2.0, русский sentence encoder для semantic search.
+- `intfloat/multilingual-e5-small` — MIT, лёгкий multilingual control baseline.
+
+Финальный список реально использованных моделей фиксируется в dense notebook и
+run metadata.
+
