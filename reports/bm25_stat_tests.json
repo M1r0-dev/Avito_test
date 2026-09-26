@@ -1,0 +1,41 @@
+{
+  "paired_tests": {
+    "local_RRF_vs_category": {
+      "mean_delta": 0.4337071778140294,
+      "ci_low": 0.4138456702011963,
+      "ci_high": 0.45354132680804793,
+      "p_value_greater": 4.999750012499375e-05,
+      "n_queries": 2452
+    },
+    "category_vs_plain": {
+      "mean_delta": 0.0,
+      "ci_low": -0.0012234910277324632,
+      "ci_high": 0.0012234910277324632,
+      "p_value_greater": 0.7474126293685316,
+      "n_queries": 2452
+    },
+    "cyrillic_only_vs_filter_aware": {
+      "mean_delta": -0.0004078303425774878,
+      "ci_low": -0.0016313213703099511,
+      "ci_high": 0.0008156606851549756,
+      "p_value_greater": 0.8786560671966401,
+      "n_queries": 2452
+    }
+  },
+  "filter_intervals": {
+    "category_match": {
+      "rate": 0.9998935043693349,
+      "wilson_95": [
+        0.9998607180021716,
+        0.9999185735989832
+      ]
+    },
+    "location_match": {
+      "rate": 0.8310195650557696,
+      "wilson_95": [
+        0.8299758930335078,
+        0.8320581269426098
+      ]
+    }
+  }
+}
