@@ -213,9 +213,14 @@ def item_rankings(
 
 
 def locate_data() -> Path:
-    roots = list(Path("/kaggle/input").glob("*/benchmark_items.parquet"))
+    input_root = Path("/kaggle/input")
+    roots = list(input_root.rglob("benchmark_items.parquet"))
     if not roots:
-        raise FileNotFoundError("benchmark_items.parquet not found under /kaggle/input")
+        mounted = [str(path) for path in input_root.rglob("*")][:100]
+        raise FileNotFoundError(
+            f"benchmark_items.parquet not found under /kaggle/input; mounted={mounted}"
+        )
+    print(f"Dataset mounted at {roots[0].parent}", flush=True)
     return roots[0].parent
 
 
