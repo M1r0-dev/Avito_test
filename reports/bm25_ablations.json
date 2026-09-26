@@ -1,0 +1,22 @@
+[
+  {
+    "experiment":"filter_aware",
+    "Recall@50":0.7495106036,
+    "HitRate@50":0.7577487765
+  },
+  {
+    "experiment":"cyrillic_only",
+    "Recall@50":0.7491027732,
+    "HitRate@50":0.7573409462
+  },
+  {
+    "experiment":"category",
+    "Recall@50":0.3158034258,
+    "HitRate@50":0.3234094617
+  },
+  {
+    "experiment":"plain",
+    "Recall@50":0.3158034258,
+    "HitRate@50":0.3234094617
+  }
+]
