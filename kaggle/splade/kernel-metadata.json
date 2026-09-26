@@ -1,0 +1,18 @@
+{
+  "id": "m1r0tvorxc/avito-russian-splade-candidate-retrieval",
+  "title": "Avito Russian SPLADE Candidate Retrieval",
+  "code_file": "06_splade_gpu_experiment.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": [
+    "m1r0tvorxc/avito-candidate-data"
+  ],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
