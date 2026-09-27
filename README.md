@@ -46,17 +46,18 @@ LFS, файлы в `artifacts/` будут текстовыми указател
 | 3 | те же каналы, learned fusion (CatBoost по рангам и token overlap) вместо RRF | 17 | `7993fa6` | test-tail `0.90476`, test `0.84448` | **0.824331** |
 | 4 | BM25 + zero-shot + LoRA v1 + LoRA v2, candidate selector | 19–20 | `51282ff` | test-tail `0.91005`, test `0.86120` | **0.837229** |
 | 5 | BM25 + LoRA v2, candidate selector (абляция) | 19 | `1f58c03` | test-tail `0.88360`, test `0.85651` | **0.829627** |
+| 6 | BM25 + zero-shot + LoRA v2, PU selector; без LoRA v1 | 24 | `55ac93d` | test-tail `0.91005`, test `0.86120` | **0.836972** |
 
 Отказ от LTR и click history поднял публичный Recall@50 на `+0.12276`, а
 разрыв offline→public сократился с `−0.161` до `−0.041`. Это согласуется с
 гипотезой covariate shift из notebook 14, но holdout всё ещё оптимистичен.
 
-Текущий `answer.csv` — попытка 4 (`7c22e7a…`), public `0.837229`:
-`+0.012898` к попытке 3. LoRA v2 обучена на 457 439 leakage-safe парах вместо
-17 033 у v1. Финальный selector использует BM25, zero-shot, v1 и v2; на test
-он улучшил фактически отправленную попытку 3 на `+0.01672`, 98.333% CI
-`[0.00489; 0.02936]`, `p=0.00080`. RRF-only контроль дал test-tail/test
-`0.89947/0.84652`, selector — `0.91005/0.86120`, поэтому отправлен selector.
+Текущий `answer.csv` — попытка 6 (`27705d5…`), public `0.836972`. Она выбрана
+как финальная инженерная конфигурация, хотя попытка 4 выше на `0.000257`:
+попытка 6 сохраняет тот же offline Recall@50 (`0.91005` test-tail, `0.86120`
+test), но полностью удаляет LoRA v1 и сокращает число тяжёлых dense query
+encoder/search стадий с трёх до двух. Финальный retrieval использует BM25,
+zero-shot BGE-M3 и LoRA v2; top-200 сжимается PU-bagged selector до top-50.
 Все предыдущие файлы сохранены в `submissions/attempt_*.csv`.
 Журнал с sha256 файлов:
 [`reports/public_submissions.json`](reports/public_submissions.json).

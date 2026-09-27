@@ -118,6 +118,29 @@
         "test_tail": -0.053971,
         "test_all": -0.026885
       }
+    },
+    {
+      "attempt": 6,
+      "name": "pu_selector_without_lora_v1",
+      "method": "Top-200 BM25 + zero-shot BGE-M3 + LoRA v2 pool compressed to 50 by a three-seed positive-unlabeled CatBoost ensemble; LoRA v1 removed",
+      "notebook": "notebooks/24_pu_selector_best_pool.ipynb",
+      "commit": "55ac93d",
+      "file": "answer.csv -> submissions/attempt_6_pu_without_lora_v1.csv",
+      "sha256": "27705d5bc6a66608b3737d54f299bbdeb70a548193bb066b118899b4e3bfb1e3",
+      "offline": {
+        "holdout": "test half of the stratified train holdout",
+        "recall_at_50_test_tail": 0.91005291005291,
+        "recall_at_50_test_all": 0.8612017400761283,
+        "delta_vs_attempt_4_test_tail": 0.0,
+        "delta_vs_attempt_4_test_all": 0.0
+      },
+      "public_recall_at_50": 0.836972,
+      "public_delta_vs_attempt_4": -0.000257,
+      "public_delta_vs_attempt_5": 0.007345,
+      "offline_to_public_gap": {
+        "test_tail": -0.073081,
+        "test_all": -0.024230
+      }
     }
   ]
 }
