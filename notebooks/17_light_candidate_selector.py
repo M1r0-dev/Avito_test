@@ -347,6 +347,12 @@ print("selected on OOF dev-tail:", selected_name)
 
 # %%
 final_model = train(dev_ids, FEATURE_SETS[selected[0]], selected[1])
+# Persist the trained fusion model: `scripts/generate_answer.py` rebuilds
+# answer.csv by inference only, so the file does not depend on re-training
+# floating-point details of another CPU.
+MODEL_PATH = ROOT / "models/learned_fusion_attempt3.cbm"
+MODEL_PATH.parent.mkdir(exist_ok=True)
+final_model.save_model(str(MODEL_PATH))
 test_frame = validation_features[validation_features.query_key.isin(test_ids)]
 test_predictions = top50(test_frame, final_model.predict(test_frame[FEATURE_SETS[selected[0]]]), selected[2])
 
