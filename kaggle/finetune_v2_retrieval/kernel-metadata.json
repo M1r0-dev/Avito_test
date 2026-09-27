@@ -1,0 +1,16 @@
+{
+  "id": "m1r0tvorxc/avito-lora-v2-dense-retrieval",
+  "title": "Avito LoRA v2 Dense Retrieval",
+  "code_file": "10b_finetune_v2_retrieval_gpu.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": ["m1r0tvorxc/avito-candidate-data"],
+  "competition_sources": [],
+  "kernel_sources": ["m1r0tvorxc/avito-user-bge-m3-lora-v2"],
+  "model_sources": []
+}

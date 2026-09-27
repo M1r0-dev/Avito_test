@@ -1,0 +1,141 @@
+{
+  "exposure": {
+    "holdout_seen_share": 0.4094616639477977,
+    "holdout_head_seen_share": 0.4805941542884523,
+    "holdout_tail_seen_share": 0.0027397260273972603,
+    "benchmark_seen_share": 0.07259380097879282
+  },
+  "segments": [
+    {
+      "segment": "all",
+      "n": 2452,
+      "k": 50,
+      "zero": 0.7681484502446982,
+      "fine": 0.8071642196846113,
+      "mean_delta": 0.039015769439912994,
+      "ci_low": 0.02705954323001631,
+      "ci_high": 0.05099238716693855,
+      "p_value_greater": 4.999750012499375e-05,
+      "n_queries": 2452
+    },
+    {
+      "segment": "all",
+      "n": 2452,
+      "k": 250,
+      "zero": 0.9035481239804242,
+      "fine": 0.9190116911364872,
+      "mean_delta": 0.01546356715606308,
+      "ci_low": 0.006423327895595432,
+      "ci_high": 0.024401848830886353,
+      "p_value_greater": 0.00044997750112494374,
+      "n_queries": 2452
+    },
+    {
+      "segment": "tail (freq<=1)",
+      "n": 365,
+      "k": 50,
+      "zero": 0.7616438356164383,
+      "fine": 0.7726027397260274,
+      "mean_delta": 0.010958904109589041,
+      "ci_low": -0.024657534246575342,
+      "ci_high": 0.04657534246575343,
+      "p_value_greater": 0.32443377831108444,
+      "n_queries": 365
+    },
+    {
+      "segment": "tail (freq<=1)",
+      "n": 365,
+      "k": 250,
+      "zero": 0.8986301369863013,
+      "fine": 0.9068493150684932,
+      "mean_delta": 0.00821917808219178,
+      "ci_low": -0.01643835616438356,
+      "ci_high": 0.03287671232876712,
+      "p_value_greater": 0.34348282585870704,
+      "n_queries": 365
+    },
+    {
+      "segment": "head (freq>1)",
+      "n": 2087,
+      "k": 50,
+      "zero": 0.7692860565404888,
+      "fine": 0.8132087525954321,
+      "mean_delta": 0.043922696054943304,
+      "ci_low": 0.03122504392269605,
+      "ci_high": 0.056716379172656116,
+      "p_value_greater": 4.999750012499375e-05,
+      "n_queries": 2087
+    },
+    {
+      "segment": "head (freq>1)",
+      "n": 2087,
+      "k": 250,
+      "zero": 0.9044082414949689,
+      "fine": 0.9211387957195336,
+      "mean_delta": 0.016730554224564768,
+      "ci_low": 0.007187350263536176,
+      "ci_high": 0.026313687909279668,
+      "p_value_greater": 0.00044997750112494374,
+      "n_queries": 2087
+    },
+    {
+      "segment": "text seen in v1 pairs",
+      "n": 1004,
+      "k": 50,
+      "zero": 0.7794156706507304,
+      "fine": 0.8140770252324038,
+      "mean_delta": 0.034661354581673305,
+      "ci_low": 0.019057104913678617,
+      "ci_high": 0.0505482237715803,
+      "p_value_greater": 9.99950002499875e-05,
+      "n_queries": 1004
+    },
+    {
+      "segment": "text seen in v1 pairs",
+      "n": 1004,
+      "k": 250,
+      "zero": 0.905710491367862,
+      "fine": 0.9185756972111554,
+      "mean_delta": 0.01286520584329349,
+      "ci_low": -0.00024900398406374523,
+      "ci_high": 0.026560424966799466,
+      "p_value_greater": 0.029548522573871305,
+      "n_queries": 1004
+    },
+    {
+      "segment": "text unseen",
+      "n": 1448,
+      "k": 50,
+      "zero": 0.7603360957642726,
+      "fine": 0.8023710865561694,
+      "mean_delta": 0.04203499079189686,
+      "ci_low": 0.02511452578268877,
+      "ci_high": 0.05930018416206262,
+      "p_value_greater": 4.999750012499375e-05,
+      "n_queries": 1448
+    },
+    {
+      "segment": "text unseen",
+      "n": 1448,
+      "k": 250,
+      "zero": 0.9020488029465931,
+      "fine": 0.9193139963167588,
+      "mean_delta": 0.017265193370165747,
+      "ci_low": 0.0051795580110497235,
+      "ci_high": 0.029696132596685083,
+      "p_value_greater": 0.0030998450077496125,
+      "n_queries": 1448
+    }
+  ],
+  "data_headroom": {
+    "train_rows_after_holdout_exclusion": 491671,
+    "item_text_available_share": 1.0,
+    "unique_query_item_pairs": 457439,
+    "unique_query_texts": 106817,
+    "unique_items": 342481,
+    "pairs_with_item_in_benchmark_corpus_share": 0.05802959520285765,
+    "v1_pairs": 17033,
+    "v1_share_of_available": 0.037235565835007506,
+    "pairs_kept_if_capped_at_32_per_text": 304557
+  }
+}
