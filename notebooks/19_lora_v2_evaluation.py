@@ -383,6 +383,72 @@ display(test_report.round(5))
 print({"alpha": alpha, "selected": selected_system, **decision})
 
 # %% [markdown]
+# ## 4.1. Deployment sanity-check против фактической попытки 3
+#
+# `C1` выше намеренно переобучается тем же кодом, что C2–C4, чтобы сравнение
+# систем отличалось только dense-каналами. Однако публичная попытка 3 использует
+# сохранённую модель notebook 17 и weighted RRF `attempt_2` как признак/tie-break.
+# После выбора C3 делаем дополнительную **post-hoc safety-проверку** против
+# именно этой модели. Она не участвует в выборе системы и не может превратить
+# отрицательный pre-registered gate в положительный; её задача — не отправить
+# кандидат, который уступает реально развёрнутому baseline.
+
+# %%
+from avito_retrieval.learned_fusion import FEATURES_B as ATTEMPT3_FEATURES
+
+attempt3_frame = features_by_system["C1"].rename(columns={
+    "v1": "fine", "v1_global": "fine_global", "v1_local": "fine_local",
+}).copy()
+attempt2_rank: dict[tuple[str, str], int] = {}
+for query_id in manifest.eval_query_id.astype(str):
+    lists = channels[("validation", query_id)]
+    weighted = reciprocal_rank_fusion(
+        [lists["bm25"], lists["zero"], lists["v1"]],
+        weights=[1.0, 0.75, 1.25], rrf_k=20, top_k=250,
+    )
+    attempt2_rank.update({(query_id, item): rank for rank, item in enumerate(weighted, 1)})
+attempt3_frame["attempt_2"] = [
+    attempt2_rank.get((query_id, item), MISSING_RANK)
+    for query_id, item in zip(attempt3_frame.query_key, attempt3_frame.item_id)
+]
+
+attempt3_model = CatBoostRanker()
+attempt3_model.load_model(str(ROOT / "models/learned_fusion_attempt3.cbm"))
+attempt3_test_frame = attempt3_frame[attempt3_frame.query_key.isin(test_ids)]
+attempt3_ordered = attempt3_test_frame.assign(
+    score=attempt3_model.predict(attempt3_test_frame[ATTEMPT3_FEATURES])
+).sort_values(["query_key", "score", "attempt_2"], ascending=[True, False, True])
+attempt3_predictions = {
+    query_id: values[:50] for query_id, values in
+    attempt3_ordered.groupby("query_key", sort=False).item_id.agg(list).items()
+}
+
+deployment_rows = []
+for segment, ids in {"test_tail": test_ids & tail_ids, "test": test_ids}.items():
+    result = paired_recall_test(
+        test_predictions[selected_system], attempt3_predictions, relevant,
+        query_ids=sorted(ids), confidence=1 - alpha,
+        n_resamples=20_000, seed=RANDOM_SEED,
+    )
+    deployment_rows.append({
+        "segment": segment,
+        "candidate": recall_at_k(select(test_predictions[selected_system], ids), select(relevant, ids)),
+        "actual_attempt_3": recall_at_k(select(attempt3_predictions, ids), select(relevant, ids)),
+        **asdict(result),
+    })
+deployment_test = pd.DataFrame(deployment_rows)
+display(deployment_test.round(5))
+
+# Conservative post-hoc safety gate: no negative mean effect on the benchmark-like
+# tail and a positive overall effect. Statistical acceptance remains entirely the
+# pre-registered C1 comparison above.
+deployment_safe = bool(
+    deployment_test.set_index("segment").loc["test_tail", "mean_delta"] >= 0
+    and deployment_test.set_index("segment").loc["test", "mean_delta"] > 0
+)
+print({"deployment_safe": deployment_safe})
+
+# %% [markdown]
 # ## 5. Benchmark-кандидат
 #
 # `answer_lora_v2.csv` пишется всегда; `answer.csv` заменяется, только если
@@ -406,7 +472,7 @@ for item_string in answer.answer:
     assert all(re.fullmatch(r"[0-9a-f]{16}", item_id) for item_id in item_ids)
     assert set(item_ids) <= corpus_ids
 answer.to_csv(ROOT / "answer_lora_v2.csv", index=False)
-if decision.get("test_tail") or decision.get("test"):
+if (decision.get("test_tail") or decision.get("test")) and deployment_safe:
     answer.to_csv(ROOT / "answer.csv", index=False)
 current = pd.read_csv(ROOT / "answer_light_selector.csv", dtype=str).set_index("query_id").answer
 overlap_with_candidate_3 = float(np.mean([
@@ -419,6 +485,8 @@ print(f"benchmark overlap with candidate 3: {overlap_with_candidate_3:.3f}")
     "systems": {name: list(value) for name, value in SYSTEMS.items()},
     "selection": selection.to_dict("records"), "selected": selected_system,
     "bonferroni_alpha": alpha, "test": test_report.to_dict("records"), "decision": decision,
+    "actual_attempt_3_sanity_test": deployment_test.to_dict("records"),
+    "deployment_safe": deployment_safe,
     "benchmark_overlap_with_candidate_3": overlap_with_candidate_3,
 }, ensure_ascii=False, indent=2, default=float), encoding="utf-8")
 print("saved reports/lora_v2_metrics.json")
