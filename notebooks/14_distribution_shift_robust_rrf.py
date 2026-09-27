@@ -340,9 +340,11 @@ print(direction)
 # Для публичной попытки сохраняем конфигурацию, выбранную на dev-tail, даже если
 # малый test-tail даёт широкий CI. Статтест отвечает на вопрос о доказанном
 # улучшении внутреннего baseline; публичная попытка дополнительно отвечает на
-# вопрос о переносе при обнаруженном shift. Первый LTR submission копируется в
-# `submissions/attempt_1_finetuned_ltr.csv`, новый — в `attempt_2_robust_rrf.csv`
-# и в корневой `answer.csv`.
+# вопрос о переносе при обнаруженном shift. Первый LTR submission берётся из
+# `answer_finetuned_dense_ltr.csv` — явного выхода notebook 13 — и копируется в
+# `submissions/attempt_1_finetuned_ltr.csv`; новый — в `attempt_2_robust_rrf.csv`
+# и в корневой `answer.csv`. Корневой `answer.csv` для этого не используется:
+# на чистом checkout в нём может лежать результат любого предыдущего notebook.
 
 # %%
 benchmark_channels = build_channels(rankings[rankings.split.eq("benchmark")])
@@ -353,8 +355,11 @@ benchmark_predictions = fuse_channels(
 submission_dir = ROOT / "submissions"
 submission_dir.mkdir(exist_ok=True)
 attempt_1 = submission_dir / "attempt_1_finetuned_ltr.csv"
-if not attempt_1.exists():
-    shutil.copy2(ROOT / "answer.csv", attempt_1)
+attempt_1_source = ROOT / "answer_finetuned_dense_ltr.csv"  # output of notebook 13
+if not attempt_1.exists() and attempt_1_source.exists():
+    shutil.copy2(attempt_1_source, attempt_1)
+elif not attempt_1_source.exists():
+    print("notebook 13 output not found; attempt 1 is not archived")
 
 answer = pd.DataFrame({
     "query_id": benchmark_queries.query_id.astype(str),
