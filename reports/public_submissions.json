@@ -14,7 +14,7 @@
         "holdout": "test half of the stratified train holdout, 1226 queries",
         "recall_at_50": 0.8595432300163132
       },
-      "public_recall_at_50": 0.698370
+      "public_recall_at_50": 0.69837
     },
     {
       "attempt": 2,
@@ -31,6 +31,37 @@
         "test_tail_queries": 189
       },
       "public_recall_at_50": 0.821129
+    },
+    {
+      "attempt": null,
+      "name": "candidate_3_light_learned_fusion",
+      "method": "CatBoost YetiRankPairwise fusion over the union of top-100 BM25 / zero-shot / fine-tuned dense: channel ranks, token overlaps, location match, item priors; no click history",
+      "notebook": "notebooks/17_light_candidate_selector.ipynb",
+      "commit": "7993fa6357daa85a291a7930ceb61dd57785681d",
+      "file": "answer.csv (= answer_light_selector.csv)",
+      "sha256": "c24bf119dc311a5f333570f6fde19e55dfe40f25d578b0f347c2699388a44642",
+      "offline": {
+        "holdout": "test half of the stratified train holdout",
+        "recall_at_50_test_tail": 0.9047619047619048,
+        "recall_at_50_test_all": 0.8444806960304513,
+        "vs_attempt_2_test_tail": {
+          "delta": 0.042328,
+          "ci_99_375": [
+            0.00792,
+            0.089947
+          ],
+          "p": 0.00385
+        },
+        "vs_attempt_2_test_all": {
+          "delta": 0.012099,
+          "ci_99_375": [
+            -0.000272,
+            0.025285
+          ],
+          "p": 0.0049
+        }
+      },
+      "public_recall_at_50": null
     }
   ]
 }
