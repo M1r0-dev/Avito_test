@@ -67,6 +67,37 @@
         "test_tail": -0.080431,
         "test_all": -0.02015
       }
+    },
+    {
+      "attempt": 4,
+      "name": "lora_v2_candidate_selector",
+      "method": "CatBoost candidate selector over BM25, zero-shot USER-bge-m3, LoRA v1 and LoRA v2 retrieval channels; LoRA v2 trained leakage-safe on 457439 unique query-item pairs",
+      "notebook": "notebooks/19_lora_v2_evaluation.ipynb",
+      "comparison_notebook": "notebooks/20_lora_v2_rrf_vs_selector.ipynb",
+      "commit": "51282fff6491129333a5c5ae132e30d13d5f20fc",
+      "file": "answer.csv = submissions/attempt_4_lora_v2_selector.csv",
+      "sha256": "7c22e7a3a0f4c199bae9db501a20f5049eda3d4c8cba125244f5511dc619506e",
+      "offline": {
+        "holdout": "test half of the stratified train holdout",
+        "recall_at_50_test_tail": 0.91005291005291,
+        "recall_at_50_test_all": 0.8612017400761283,
+        "vs_actual_attempt_3_test_tail": {
+          "delta": 0.005291005291005291,
+          "ci_98_333": [-0.026455026455026454, 0.037037037037037035],
+          "p": 0.5022748862556872
+        },
+        "vs_actual_attempt_3_test_all": {
+          "delta": 0.016721044045676998,
+          "ci_98_333": [0.004893964110929853, 0.02936378466557912],
+          "p": 0.0007999600019999
+        }
+      },
+      "public_recall_at_50": 0.837229,
+      "public_delta_vs_attempt_3": 0.012898,
+      "offline_to_public_gap": {
+        "test_tail": -0.072824,
+        "test_all": -0.023973
+      }
     }
   ]
 }

@@ -14,7 +14,7 @@
 в [`SOLUTION.md`](SOLUTION.md), проверка воспроизводимости — в
 [`reports/REPRODUCIBILITY.md`](reports/REPRODUCIBILITY.md).
 
-## Быстрый запуск финального решения
+## Быстрый запуск воспроизводимой попытки 3
 
 Нужен [Git LFS](https://git-lfs.com): индекс BM25, rankings каналов и модель
 fusion (~394 MB) хранятся в репозитории через LFS. GPU, Kaggle и сеть не нужны.
@@ -31,7 +31,9 @@ python scripts/generate_answer.py --check   # ~1.5 мин на CPU
 USER-bge-m3), считает признаки learned fusion, применяет сохранённую модель
 `models/learned_fusion_attempt3.cbm`, пишет `answer.csv`, проверяет формат
 submission и sha256. `--check` падает, если файл отличается от отправленной
-попытки 3 (`c24bf119…`, public `0.824331`). Если репозиторий склонирован без
+попытки 3 (`c24bf119…`, public `0.824331`). Упаковка нового лучшего решения
+LoRA v2 выполняется после фиксации качества; его исследовательский путь —
+notebooks 19 и 20. Если репозиторий склонирован без
 LFS, файлы в `artifacts/` будут текстовыми указателями — выполните
 `git lfs pull`.
 
@@ -42,19 +44,19 @@ LFS, файлы в `artifacts/` будут текстовыми указател
 | 1 | CatBoost LTR: BM25 + fine-tuned dense + SPLADE + click history | 13 | `44e0dfa` | test `0.85954` | **0.698370** |
 | 2 | RRF BM25 + zero-shot dense + fine-tuned dense, `1 / 0.75 / 1.25` | 14 | `a7ce7dc` | test-tail `0.86243`, test `0.83238` | **0.821129** |
 | 3 | те же каналы, learned fusion (CatBoost по рангам и token overlap) вместо RRF | 17 | `7993fa6` | test-tail `0.90476`, test `0.84448` | **0.824331** |
+| 4 | BM25 + zero-shot + LoRA v1 + LoRA v2, candidate selector | 19–20 | `51282ff` | test-tail `0.91005`, test `0.86120` | **0.837229** |
 
 Отказ от LTR и click history поднял публичный Recall@50 на `+0.12276`, а
 разрыв offline→public сократился с `−0.161` до `−0.041`. Это согласуется с
 гипотезой covariate shift из notebook 14, но holdout всё ещё оптимистичен.
 
-Текущий `answer.csv` — попытка 3 (`c24bf119…`), public `0.824331`:
-`+0.0032` к попытке 2. Offline против попытки 2 было test-tail `+0.0423`
-(99.375% CI `[0.0079; 0.0899]`, `p=0.0039`) и test `+0.0121` (`p=0.0049`):
-направление перенеслось, величина — нет. Разрыв offline→public вырос с
-`−0.041` до `−0.080` на test-tail, то есть выигрыш селектора, обученного на
-1 226 dev-запросах holdout, в основном holdout-специфичен; test-tail из 189
-запросов слишком мал, чтобы надёжно предсказывать величину переноса.
-Попытка 2 сохранена в `submissions/attempt_2_robust_rrf.csv`.
+Текущий `answer.csv` — попытка 4 (`7c22e7a…`), public `0.837229`:
+`+0.012898` к попытке 3. LoRA v2 обучена на 457 439 leakage-safe парах вместо
+17 033 у v1. Финальный selector использует BM25, zero-shot, v1 и v2; на test
+он улучшил фактически отправленную попытку 3 на `+0.01672`, 98.333% CI
+`[0.00489; 0.02936]`, `p=0.00080`. RRF-only контроль дал test-tail/test
+`0.89947/0.84652`, selector — `0.91005/0.86120`, поэтому отправлен selector.
+Все предыдущие файлы сохранены в `submissions/attempt_*.csv`.
 Журнал с sha256 файлов:
 [`reports/public_submissions.json`](reports/public_submissions.json).
 
@@ -86,6 +88,11 @@ Notebooks — основной источник экспериментальны
 11. `notebooks/14_distribution_shift_robust_rrf.ipynb` — аудит shift и текущий
     submission без LTR/history: BM25 + zero-shot dense + fine-tuned dense RRF,
     выбранный на редких запросах; публичный Recall@50 `0.821129`.
+12. `notebooks/17_light_candidate_selector.ipynb` — лёгкий selector попытки 3.
+13. `notebooks/18_finetune_audit.ipynb` — аудит покрытия LoRA v1 и обоснование v2.
+14. `notebooks/19_lora_v2_evaluation.ipynb` — channel/system evaluation LoRA v2.
+15. `notebooks/20_lora_v2_rrf_vs_selector.ipynb` — финальное сравнение RRF и
+    selector; selector принят и получил public Recall@50 `0.837229`.
 
 SPLADE-stage использует русский checkpoint `naver/neuclir22-splade-ru` и
 контролируемые абляции pruning, chunking и global/local retrieval. Лицензия

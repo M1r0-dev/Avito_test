@@ -2,7 +2,7 @@
 
 Финальный файл — `answer.csv`. Репозиторий содержит полный исследовательский
 pipeline: EDA, фиксированный validation split, retrieval-эксперименты,
-статистические тесты, GPU-notebooks и shift-aware RRF-сборку.
+статистические тесты, GPU-notebooks и learned candidate selector.
 
 Решается только первая стадия каскада — кандидатогенерация: 50 кандидатов с
 максимальным Recall@50 передаются дальше, на ранжирование. Ранжирование вне
@@ -32,16 +32,17 @@ language hard filter отклонён: корпус уже на 99.87% кири�
 ## Модели и текущий submission
 
 1. BM25 ищет lexical candidates по title, parameters и description.
-2. Русский `deepvk/USER-bge-m3` дообучается leakage-safe LoRA на 17 033
-   уникальных положительных item. Validation query signatures исключены из
-   обучения до sampling.
-3. Fine-tuned bi-encoder строит global и location-local dense rankings по
-   554 920 passages на двух Tesla T4.
-4. Zero-shot и fine-tuned dense rankings объединяются с BM25 через RRF с
-   `k=20` и весами `1 / 0.75 / 1.25`. Веса выбраны только на редком dev-tail.
-5. SPLADE и CatBoostRanker подробно исследованы, но не входят в текущий
-   submission. LTR дал лучший offline score, однако плохо перенёсся на
-   benchmark; SPLADE не прошёл прямой statistical gate.
+2. Русский `deepvk/USER-bge-m3` представлен zero-shot каналом и двумя LoRA:
+   v1 на 17 033 парах и v2 на 457 439 leakage-safe уникальных query-item парах.
+   Все validation query signatures исключены до обучения.
+3. Каждый bi-encoder строит global и location-local rankings по 554 920
+   passages на двух Tesla T4; v2 сохраняет также FP16 passage/query vectors.
+4. Лёгкий CatBoost candidate selector выбирает 50 items из union top-100 BM25,
+   zero-shot, LoRA v1 и LoRA v2. Используются только ranks, token overlap,
+   location match и item priors — click history исключена.
+5. RRF-only с теми же каналами сохранён как интерпретируемый контроль:
+   test-tail/test `0.89947/0.84652` против `0.91005/0.86120` у selector.
+   SPLADE не входит в submission, потому что его прямой прирост не прошёл gate.
 
 Open-source зависимости: pandas, NumPy, scikit-learn, SentenceTransformers,
 PEFT, PyTorch, CatBoost и PyArrow. Внешние inference API не используются.
