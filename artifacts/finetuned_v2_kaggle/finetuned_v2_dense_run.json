@@ -1,0 +1,31 @@
+{
+  "stage": "retrieval_v2",
+  "base_model": "deepvk/USER-bge-m3",
+  "license": "apache-2.0",
+  "training": {
+    "seed": 42,
+    "batch_per_gpu": 32,
+    "lora_rank": 32,
+    "learning_rate": 0.0002,
+    "temperature": 0.03,
+    "checkpoint_every": 1000,
+    "pairs": 457439,
+    "steps": 7147,
+    "mean_loss": 0.36985957852785106,
+    "masked_false_negatives_rank0": 6680,
+    "elapsed_seconds": 17496.136995561,
+    "trainable_parameters": 14155776,
+    "world_size": 2
+  },
+  "items": 189212,
+  "passages": 554920,
+  "queries": 4904,
+  "chunk_words": 140,
+  "overlap": 30,
+  "max_chunks": 4,
+  "embedding_dtype": "float16",
+  "gpus": [
+    "Tesla T4",
+    "Tesla T4"
+  ]
+}

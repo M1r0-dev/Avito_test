@@ -1,21 +1,19 @@
 #!/usr/bin/env python
-"""Generate answer.csv of the final solution (public attempt 3) by inference.
+"""Generate answer.csv of the final solution (public attempt 6) by inference.
 
-Inputs (all tracked in the repository via Git LFS, except the task data):
+Pipeline: BM25 + zero-shot USER-bge-m3 + LoRA v2 USER-bge-m3 rankings ->
+union of top-100 per channel -> RRF top-200 pool -> notebook-19 features ->
+three PU-bagged CatBoost models -> mean reciprocal rank -> top-50.
 
-- `dataset/benchmark_queries.parquet`, `dataset/benchmark_items.parquet` — task data;
-- `artifacts/rankings/bm25_rankings.parquet` — filter-aware BM25 channel (notebook 05);
-- `artifacts/dense_kaggle/dense_rankings.parquet` — zero-shot USER-bge-m3 (Kaggle stage 04);
-- `artifacts/finetuned_dense_kaggle/finetuned_dense_rankings.parquet` — LoRA USER-bge-m3
-  (Kaggle stages 8A/8B);
-- `models/learned_fusion_attempt3.cbm` — the learned fusion trained in notebook 17.
+Inputs (tracked via Git LFS, except the raw task data in `dataset/`):
 
-The script builds the candidate pool (top-100 of each channel), computes the
-notebook-17 features, scores them with the saved model and writes the top-50
-per query. It validates the submission contract and prints the sha256; with
-`--check` it fails unless the file equals the submitted attempt 3.
+- `artifacts/rankings/bm25_rankings.parquet` — filter-aware BM25 (notebook 05);
+- `artifacts/dense_kaggle/dense_rankings.parquet` — zero-shot USER-bge-m3 (Kaggle 04);
+- `artifacts/finetuned_v2_kaggle/finetuned_v2_dense_rankings.parquet` — LoRA v2 (Kaggle 10B);
+- `models/pu_selector_seed{41,42,43}.cbm` — `scripts/train_pu_selector.py` (notebook 24).
 
-Runtime: about 1-2 minutes on a laptop CPU, no GPU and no network.
+With `--check` the script fails unless the file equals the submitted attempt 6.
+Runtime: about 1 minute on a laptop CPU, no GPU and no network.
 """
 
 from __future__ import annotations
@@ -33,45 +31,32 @@ from catboost import CatBoostRanker
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
-from avito_retrieval.learned_fusion import (  # noqa: E402
-    FEATURES_B, ITEM_COLUMNS, ItemSide, channel_lists, pool_of, query_features, top50,
-)
+from avito_retrieval.learned_fusion import ITEM_COLUMNS  # noqa: E402
+from avito_retrieval.pu_selector import PU_SEEDS, build_features, ensemble_top50, load_channels  # noqa: E402
 
-ATTEMPT_3_SHA256 = "c24bf119dc311a5f333570f6fde19e55dfe40f25d578b0f347c2699388a44642"
+ATTEMPT_6_SHA256 = "27705d5bc6a66608b3737d54f299bbdeb70a548193bb066b118899b4e3bfb1e3"
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--output", type=Path, default=ROOT / "answer.csv")
-    parser.add_argument("--model", type=Path, default=ROOT / "models/learned_fusion_attempt3.cbm")
-    parser.add_argument("--check", action="store_true", help="require the submitted attempt-3 sha256")
+    parser.add_argument("--models-dir", type=Path, default=ROOT / "models")
+    parser.add_argument("--check", action="store_true", help="require the submitted attempt-6 sha256")
     args = parser.parse_args()
     started = time.perf_counter()
 
     queries = pd.read_parquet(ROOT / "dataset/benchmark_queries.parquet")
-    rankings = (
-        pd.read_parquet(ROOT / "artifacts/rankings/bm25_rankings.parquet")
-        .merge(pd.read_parquet(ROOT / "artifacts/dense_kaggle/dense_rankings.parquet"),
-               on=["query_key", "split"], validate="one_to_one")
-        .merge(pd.read_parquet(ROOT / "artifacts/finetuned_dense_kaggle/finetuned_dense_rankings.parquet"),
-               on=["query_key", "split"], validate="one_to_one")
-    )
-    rankings = rankings[rankings.split.eq("benchmark")].set_index("query_key")
-    channels = {str(key): channel_lists(row) for key, row in zip(rankings.index, rankings.itertuples())}
-    assert set(channels) == set(queries.query_id.astype(str)), "rankings must cover every benchmark query"
-
-    # Only the items that can enter a pool need offline features.
-    needed = {item for lists in channels.values() for item in pool_of(lists)}
     items = pd.read_parquet(ROOT / "dataset/benchmark_items.parquet", columns=ITEM_COLUMNS)
-    item_side = ItemSide.build(items[items.item_id.astype(str).isin(needed)])
+    channels = load_channels(ROOT, "benchmark")
+    assert set(channels) == set(queries.query_id.astype(str)), "rankings must cover every benchmark query"
+    frame = build_features(queries, "query_id", channels, items)
 
-    frame = pd.concat([
-        query_features(query, str(query.query_id), channels[str(query.query_id)], item_side)
-        for query in queries.itertuples(index=False)
-    ], ignore_index=True)
-    model = CatBoostRanker()
-    model.load_model(str(args.model))
-    predictions = top50(frame, model.predict(frame[FEATURES_B]))
+    models = []
+    for seed in PU_SEEDS:
+        model = CatBoostRanker()
+        model.load_model(str(args.models_dir / f"pu_selector_seed{seed}.cbm"))
+        models.append(model)
+    predictions = ensemble_top50(frame, models)
 
     answer = pd.DataFrame({
         "query_id": queries.query_id.astype(str),
@@ -84,7 +69,7 @@ def main() -> None:
     assert answer.query_id.str.fullmatch(r"[A-Za-z0-9]{16}").all()
     for item_string in answer.answer:
         item_ids = item_string.split(" ")
-        assert 1 <= len(item_ids) <= 50 and len(item_ids) == len(set(item_ids))
+        assert len(item_ids) == 50 == len(set(item_ids))
         assert all(re.fullmatch(r"[0-9a-f]{16}", item_id) for item_id in item_ids)
         assert set(item_ids) <= corpus_ids
     answer.to_csv(args.output, index=False)
@@ -92,9 +77,9 @@ def main() -> None:
     digest = hashlib.sha256(args.output.read_bytes()).hexdigest()
     print(f"wrote {args.output} ({len(answer)} queries) in {time.perf_counter() - started:.1f}s")
     print(f"sha256 {digest}")
-    print("matches submitted attempt 3" if digest == ATTEMPT_3_SHA256 else "differs from submitted attempt 3")
-    if args.check and digest != ATTEMPT_3_SHA256:
-        raise SystemExit("answer.csv differs from the submitted attempt 3")
+    print("matches submitted attempt 6" if digest == ATTEMPT_6_SHA256 else "differs from submitted attempt 6")
+    if args.check and digest != ATTEMPT_6_SHA256:
+        raise SystemExit("answer.csv differs from the submitted attempt 6")
 
 
 if __name__ == "__main__":

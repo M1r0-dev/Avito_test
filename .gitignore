@@ -17,8 +17,13 @@ artifacts/dense_kaggle/*
 artifacts/finetuned_dense_kaggle/*
 !artifacts/finetuned_dense_kaggle/finetuned_dense_rankings.parquet
 !artifacts/finetuned_dense_kaggle/finetuned_dense_run.json
+!artifacts/finetuned_v2_kaggle/
+artifacts/finetuned_v2_kaggle/*
+!artifacts/finetuned_v2_kaggle/finetuned_v2_dense_rankings.parquet
+!artifacts/finetuned_v2_kaggle/finetuned_v2_dense_run.json
 models/*
 !models/learned_fusion_attempt3.cbm
+!models/pu_selector_seed*.cbm
 
 # Keep lightweight reports, but ignore regenerated binary figures.
 reports/figures/*.png
