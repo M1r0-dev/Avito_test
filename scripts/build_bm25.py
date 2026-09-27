@@ -13,7 +13,13 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "src"))
 
 from avito_retrieval.bm25 import SparseBM25  # noqa: E402
+from avito_retrieval.language import dominant_script  # noqa: E402
 from avito_retrieval.text import bm25_item_text  # noqa: E402
+
+# Script detection needs only a representative prefix: the title plus the first
+# 1000 description characters. Notebook 03 uses these labels for the rejected
+# Cyrillic-only hard-filter ablation.
+LANGUAGE_DESCRIPTION_CHARS = 1000
 
 
 def main() -> None:
@@ -35,6 +41,14 @@ def main() -> None:
     items[["item_id", "item_category_id", "item_location_id", "item_rating"]].to_parquet(
         args.output / "items.parquet", index=False
     )
+    language_text = (
+        items.item_title_raw.fillna("") + " "
+        + items.item_description_raw.fillna("").str[:LANGUAGE_DESCRIPTION_CHARS]
+    )
+    pd.DataFrame({
+        "item_id": items.item_id,
+        "lang_script": language_text.map(dominant_script),
+    }).to_parquet(args.output / "item_language.parquet", index=False)
     print(f"Indexed {len(items):,} items; vocabulary={index.matrix.shape[1]:,}")
 
 
