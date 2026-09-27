@@ -1,0 +1,183 @@
+{
+  "candidate_pool": {
+    "pool_width_per_channel": 200,
+    "BM25+dense_union": 0.9318923327895595,
+    "BM25+dense+SPLADE_union": 0.9376019575856444
+  },
+  "selection": [
+    {
+      "objective": "PairLogitPairwise",
+      "best_iteration": 9,
+      "tune_recall": 0.8268186753528773
+    },
+    {
+      "objective": "YetiRankPairwise",
+      "best_iteration": 10,
+      "tune_recall": 0.8197611292073832
+    },
+    {
+      "objective": "QuerySoftMax",
+      "best_iteration": 1,
+      "tune_recall": 0.7838219326818675
+    },
+    {
+      "objective": "YetiRank",
+      "best_iteration": 38,
+      "tune_recall": 0.677198697068404
+    }
+  ],
+  "selected_objective": "PairLogitPairwise",
+  "selected_iterations": 9,
+  "control_iterations": 195,
+  "tune_comparison": {
+    "mean_delta": 0.007057546145494028,
+    "ci_low": -0.011400651465798045,
+    "ci_high": 0.026601520086862104,
+    "p_value_greater": 0.2523373831308435,
+    "n_queries": 307
+  },
+  "baseline_test_recall": 0.8092033713974986,
+  "control_ltr_test_recall": 0.84057911908646,
+  "candidate_ltr_test_recall": 0.8040783034257748,
+  "distance_to_0_9": 0.09592169657422522,
+  "primary_alpha": 0.005555555555555556,
+  "bootstrap_confidence": 0.9944444444444445,
+  "primary_test": {
+    "mean_delta": -0.03650081566068516,
+    "ci_low": -0.053833605220228384,
+    "ci_high": -0.020089231768473277,
+    "p_value_greater": 1.0,
+    "n_queries": 1226
+  },
+  "primary_confirmed": false,
+  "slice_metrics": [
+    {
+      "slice": "has_filters",
+      "value": "False",
+      "queries": 773,
+      "baseline": 0.8544200086244071,
+      "ltr": 0.8216472617507546,
+      "delta": -0.0327727468736525
+    },
+    {
+      "slice": "has_filters",
+      "value": "True",
+      "queries": 453,
+      "baseline": 0.8169610007358351,
+      "ltr": 0.7740986019131715,
+      "delta": -0.04286239882266363
+    },
+    {
+      "slice": "local_pool_bucket",
+      "value": "0",
+      "queries": 213,
+      "baseline": 0.5563380281690141,
+      "ltr": 0.43896713615023475,
+      "delta": -0.11737089201877937
+    },
+    {
+      "slice": "local_pool_bucket",
+      "value": "1-99",
+      "queries": 21,
+      "baseline": 0.7619047619047619,
+      "ltr": 0.7142857142857143,
+      "delta": -0.04761904761904756
+    },
+    {
+      "slice": "local_pool_bucket",
+      "value": "100-499",
+      "queries": 106,
+      "baseline": 0.8773584905660378,
+      "ltr": 0.8584905660377359,
+      "delta": -0.018867924528301883
+    },
+    {
+      "slice": "local_pool_bucket",
+      "value": "10000+",
+      "queries": 272,
+      "baseline": 0.8338235294117647,
+      "ltr": 0.7958333333333334,
+      "delta": -0.03799019607843135
+    },
+    {
+      "slice": "local_pool_bucket",
+      "value": "2000-9999",
+      "queries": 277,
+      "baseline": 0.9485559566787004,
+      "ltr": 0.9217809867629363,
+      "delta": -0.026774969915764113
+    },
+    {
+      "slice": "local_pool_bucket",
+      "value": "500-1999",
+      "queries": 337,
+      "baseline": 0.93026706231454,
+      "ltr": 0.9332344213649851,
+      "delta": 0.0029673590504450953
+    },
+    {
+      "slice": "query_frequency_bucket",
+      "value": "1",
+      "queries": 189,
+      "baseline": 0.8518518518518519,
+      "ltr": 0.8465608465608465,
+      "delta": -0.005291005291005346
+    },
+    {
+      "slice": "query_frequency_bucket",
+      "value": "2-5",
+      "queries": 231,
+      "baseline": 0.8008658008658008,
+      "ltr": 0.7748917748917749,
+      "delta": -0.025974025974025983
+    },
+    {
+      "slice": "query_frequency_bucket",
+      "value": "21+",
+      "queries": 599,
+      "baseline": 0.8423205342237062,
+      "ltr": 0.8093489148580969,
+      "delta": -0.03297161936560933
+    },
+    {
+      "slice": "query_frequency_bucket",
+      "value": "6-20",
+      "queries": 207,
+      "baseline": 0.8695652173913043,
+      "ltr": 0.782608695652174,
+      "delta": -0.08695652173913038
+    },
+    {
+      "slice": "positive_bucket",
+      "value": "1",
+      "queries": 1132,
+      "baseline": 0.8409893992932862,
+      "ltr": 0.8047703180212014,
+      "delta": -0.03621908127208484
+    },
+    {
+      "slice": "positive_bucket",
+      "value": "2",
+      "queries": 68,
+      "baseline": 0.8308823529411765,
+      "ltr": 0.7941176470588235,
+      "delta": -0.03676470588235303
+    },
+    {
+      "slice": "positive_bucket",
+      "value": "3-5",
+      "queries": 25,
+      "baseline": 0.8486666666666666,
+      "ltr": 0.7986666666666666,
+      "delta": -0.04999999999999993
+    },
+    {
+      "slice": "positive_bucket",
+      "value": "6+",
+      "queries": 1,
+      "baseline": 0.8333333333333334,
+      "ltr": 0.8333333333333334,
+      "delta": 0.0
+    }
+  ]
+}
