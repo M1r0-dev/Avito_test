@@ -1,0 +1,81 @@
+{
+  "run": {
+    "stage": "retrieval_only",
+    "base_model": "deepvk/USER-bge-m3",
+    "license": "apache-2.0",
+    "training": {
+      "pairs": 17033,
+      "steps": 851,
+      "mean_loss": 0.19852259254747057,
+      "elapsed_seconds": 529.9881013109999,
+      "lora_rank": 16,
+      "learning_rate": 0.0002,
+      "temperature": 0.03,
+      "trainable_parameters": 2359296,
+      "world_size": 2
+    },
+    "items": 189212,
+    "passages": 554920,
+    "queries": 4904,
+    "chunk_words": 140,
+    "overlap": 30,
+    "max_chunks": 4,
+    "gpus": [
+      "Tesla T4",
+      "Tesla T4"
+    ]
+  },
+  "selected_local_weight": 1.5,
+  "selected_rrf_k": 20,
+  "selected_dense_weight": 2.0,
+  "comparison": [
+    {
+      "method": "zero-shot dense",
+      "dev": 0.7734910277324633,
+      "test": 0.7628058727569331
+    },
+    {
+      "method": "fine-tuned dense",
+      "dev": 0.8145731375747689,
+      "test": 0.7997553017944535
+    },
+    {
+      "method": "BM25+zero",
+      "dev": 0.8314301250679718,
+      "test": 0.8092033713974986
+    },
+    {
+      "method": "BM25+fine",
+      "dev": 0.8379554105492115,
+      "test": 0.8299347471451876
+    }
+  ],
+  "primary_alpha": 0.01,
+  "bootstrap_confidence": 0.99,
+  "primary_test": {
+    "mean_delta": 0.02073137574768896,
+    "ci_low": 0.0014953779227841215,
+    "ci_high": 0.0399673735725938,
+    "p_value_greater": 0.00279986000699965,
+    "n_queries": 1226
+  },
+  "dense_only_test": {
+    "mean_delta": 0.03694942903752039,
+    "ci_low": 0.019412724306688417,
+    "ci_high": 0.05444637030995097,
+    "p_value_greater": 4.999750012499375e-05,
+    "n_queries": 1226
+  },
+  "channel_accepted": true,
+  "candidate_pool": {
+    "old_union": 0.9376019575856444,
+    "with_finetuned_dense": 0.9578575312669929
+  },
+  "candidate_pool_test": {
+    "mean_delta": 0.02025557368134856,
+    "ci_low": 0.01277868406742795,
+    "ci_high": 0.028415579119086168,
+    "p_value_greater": 4.999750012499375e-05,
+    "n_queries": 1226
+  }
+}
