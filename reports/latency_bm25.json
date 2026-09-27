@@ -89,7 +89,7 @@
         },
         {
           "field": "CPU(s) scaling MHz:",
-          "data": "30%"
+          "data": "29%"
         },
         {
           "field": "CPU max MHz:",
@@ -218,11 +218,11 @@
   "stages": {
     "bm25_one_pass": {
       "n": 500,
-      "mean_ms": 111.948988528,
-      "p50_ms": 110.214098,
-      "p95_ms": 128.59048955,
-      "p99_ms": 135.52253824,
-      "max_ms": 151.534168,
+      "mean_ms": 12.432876288,
+      "p50_ms": 12.5191055,
+      "p95_ms": 18.40228495,
+      "p99_ms": 20.48149629,
+      "max_ms": 23.527567,
       "guardrail_p95_ms": 500.0,
       "passes_guardrail": true
     }

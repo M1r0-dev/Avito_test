@@ -25,6 +25,15 @@ def test_bm25_reusable_score_vector() -> None:
     assert np.allclose(scores, full[rows])
 
 
+def test_bm25_inverted_index_is_bit_identical_to_matmul() -> None:
+    documents = ["ремонт телефона и ноутбука", "ремонт автомобиля", "маникюр и педикюр",
+                 "ремонт квартиры под ключ", "педикюр на дому", "ноутбук ремонт экрана"]
+    index = SparseBM25(min_df=1).fit(documents)
+    for query in ["ремонт ноутбука", "педикюр ремонт маникюр", "неизвестное слово", "", "ремонт ремонт"]:
+        assert np.array_equal(index.score(query), index.score_matmul(query))
+    assert index.score("ремонт").dtype == np.float32
+
+
 def test_rating_parser() -> None:
     assert requested_min_rating("Рейтинг пользователя 4 звезды и выше") == 4.0
     assert requested_min_rating("") is None

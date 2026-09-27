@@ -1,4 +1,9 @@
-"""Memory-efficient sparse BM25 based on SciPy CSR matrices."""
+"""Memory-efficient sparse BM25 based on SciPy CSR matrices.
+
+Online scoring uses an in-memory inverted index (a CSC copy of the same
+matrix): a query touches only the posting lists of its own terms instead of
+all 33.6M non-zeros of the document-term matrix.
+"""
 
 from __future__ import annotations
 
@@ -23,6 +28,9 @@ class SparseBM25:
     max_features: int | None = 350_000
     vectorizer: CountVectorizer | None = None
     matrix: sp.csr_matrix | None = None
+    # Inverted index: column j holds the posting list (documents, BM25 weights)
+    # of term j. Built from `matrix` on first use; never serialized.
+    postings: sp.csc_matrix | None = None
 
     def fit(self, documents: list[str]) -> "SparseBM25":
         self.vectorizer = CountVectorizer(
@@ -45,6 +53,7 @@ class SparseBM25:
         counts.data = counts.data * (self.k1 + 1.0) / (counts.data + normalizer)
         counts.data *= idf[counts.indices]
         self.matrix = counts.astype(np.float32)
+        self.postings = None  # rebuilt lazily for the new matrix
         return self
 
     def search(
@@ -68,8 +77,38 @@ class SparseBM25:
         order = candidate[np.argsort(scores[candidate])[::-1]]
         return order, scores[order]
 
+    def build_postings(self) -> sp.csc_matrix:
+        """Build (once) the in-memory inverted index used by `score`."""
+        if self.matrix is None:
+            raise RuntimeError("Call fit() or load() before build_postings()")
+        if self.postings is None:
+            postings = self.matrix.tocsc()
+            postings.sort_indices()
+            self.postings = postings
+        return self.postings
+
     def score(self, query: str) -> np.ndarray:
-        """Compute one corpus score vector for reuse by global/local channels."""
+        """Compute one corpus score vector for reuse by global/local channels.
+
+        Query term weights are binary, so a document score is the sum of its
+        BM25 weights over the distinct query terms. Posting lists are added in
+        ascending term id with float32 accumulation — the same order and
+        precision SciPy uses for `matrix @ query.T` — so the result is
+        bit-identical to the full sparse product (`score_matmul`), only the
+        work is proportional to the query's postings, not to the whole matrix.
+        """
+        if self.vectorizer is None or self.matrix is None:
+            raise RuntimeError("Call fit() or load() before score()")
+        postings = self.build_postings()
+        terms = np.unique(self.vectorizer.transform([query]).indices)
+        scores = np.zeros(postings.shape[0], dtype=np.float32)
+        for term in terms:
+            start, end = postings.indptr[term], postings.indptr[term + 1]
+            scores[postings.indices[start:end]] += postings.data[start:end]
+        return scores
+
+    def score_matmul(self, query: str) -> np.ndarray:
+        """Reference scorer: full sparse product over the document-term matrix."""
         if self.vectorizer is None or self.matrix is None:
             raise RuntimeError("Call fit() or load() before score()")
         query_vector = self.vectorizer.transform([query])
