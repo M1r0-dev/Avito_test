@@ -1,0 +1,10 @@
+{
+  "kernel": "m1r0tvorxc/avito-user-bge-m3-domain-adaptation",
+  "version": 2,
+  "status": "ERROR",
+  "elapsed_seconds": 12.040397614,
+  "failure_stage": "notebook_startup",
+  "error": "No kernel name found in notebook and no override provided.",
+  "root_cause": "the generated ipynb did not contain a kernelspec",
+  "remediation": "set the python3 kernelspec on both staged Kaggle notebooks"
+}
