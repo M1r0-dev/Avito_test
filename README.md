@@ -5,9 +5,21 @@
 Все модели работают локально, без внешних inference API.
 
 Краткое описание финального подхода, ошибок и полного воспроизведения находится
-в [`SOLUTION.md`](SOLUTION.md). Первая публичная попытка с LTR получила
-Recall@50 **0.698370** при offline `0.85954`. Текущий `answer.csv` — вторая,
-shift-aware RRF-попытка; её публичная оценка ещё не получена.
+в [`SOLUTION.md`](SOLUTION.md), проверка воспроизводимости — в
+[`reports/REPRODUCIBILITY.md`](reports/REPRODUCIBILITY.md).
+
+## Публичные попытки
+
+| # | Метод | Notebook | Commit | Offline Recall@50 | Public Recall@50 |
+|---|---|---|---|---|---|
+| 1 | CatBoost LTR: BM25 + fine-tuned dense + SPLADE + click history | 13 | `44e0dfa` | test `0.85954` | **0.698370** |
+| 2 | RRF BM25 + zero-shot dense + fine-tuned dense, `1 / 0.75 / 1.25` | 14 | `a7ce7dc` | test-tail `0.86243`, test `0.83238` | **0.821129** |
+
+Текущий `answer.csv` — попытка 2. Отказ от LTR и click history поднял
+публичный Recall@50 на `+0.12276`, а разрыв offline→public сократился с
+`−0.161` до `−0.041`. Это согласуется с гипотезой covariate shift из
+notebook 14, но holdout всё ещё оптимистичен. Журнал с sha256 файлов:
+[`reports/public_submissions.json`](reports/public_submissions.json).
 
 ## Порядок исследования
 
@@ -36,7 +48,7 @@ Notebooks — основной источник экспериментальны
     публичная попытка показала сильный validation shift.
 11. `notebooks/14_distribution_shift_robust_rrf.ipynb` — аудит shift и текущий
     submission без LTR/history: BM25 + zero-shot dense + fine-tuned dense RRF,
-    выбранный на редких запросах.
+    выбранный на редких запросах; публичный Recall@50 `0.821129`.
 
 SPLADE-stage использует русский checkpoint `naver/neuclir22-splade-ru` и
 контролируемые абляции pruning, chunking и global/local retrieval. Лицензия
@@ -96,6 +108,30 @@ pip install -e '.[dev]'
 pytest
 ```
 
+## Быстрое воспроизведение `answer.csv` (CPU, ~6 минут)
+
+GPU-этапы выполнены публичными Kaggle kernels:
+[zero-shot dense](https://www.kaggle.com/code/m1r0tvorxc/avito-russian-dense-candidate-retrieval),
+[SPLADE](https://www.kaggle.com/code/m1r0tvorxc/avito-russian-splade-candidate-retrieval),
+[LoRA training](https://www.kaggle.com/code/m1r0tvorxc/avito-user-bge-m3-domain-adaptation),
+[fine-tuned retrieval](https://www.kaggle.com/code/m1r0tvorxc/avito-finetuned-dense-retrieval).
+Их выходы скачиваются без Kaggle-аккаунта и сверяются по sha256. Повторное
+LoRA-обучение на GPU не бит-в-бит детерминировано, поэтому точное воспроизведение
+отправленного файла опирается на сохранённые rankings.
+
+```bash
+PYTHONPATH=src python scripts/build_bm25.py
+jupyter nbconvert --to notebook --execute --inplace notebooks/02_validation_design.ipynb
+python scripts/fetch_public_kaggle_outputs.py            # --splade для notebooks 06–13
+jupyter nbconvert --to notebook --execute --inplace notebooks/05_dense_rrf_experiments.ipynb
+jupyter nbconvert --to notebook --execute --inplace notebooks/14_distribution_shift_robust_rrf.ipynb
+sha256sum answer.csv  # 7b4d257955029a8eb7d090a86add9fcd352546fcd91080aa4b4790fb1a95efcc
+```
+
+Notebook 05 материализует `artifacts/rankings/bm25_rankings.parquet` и
+перезаписывает `answer.csv` двухканальным baseline; notebook 14 записывает
+итоговый файл поверх.
+
 ## Воспроизведение текущего baseline
 
 ```bash
@@ -140,8 +176,10 @@ Notebook 14 показал, что 72.27% benchmark-текстов имеют tr
 текущий `answer.csv` заменён на робастный RRF без CatBoost/history. На
 независимом tail-test он получил `0.86243` против `0.84656` у BM25+fine;
 дельта `+0.01587`, но строгий 99.375% CI `[-0.02646; 0.06349]` пересекает ноль.
-Это внешняя проверка обоснованной shift-гипотезы, а не заявление о доказанном
-приросте до получения публичного score.
+Это была внешняя проверка обоснованной shift-гипотезы. Публичный результат —
+`0.821129`, то есть `+0.12276` к первой попытке. Прирост относится ко всей
+замене LTR/history на RRF; отдельный вклад выбранных весов RRF на benchmark не
+измерялся.
 
 ## Лицензии внешних моделей
 

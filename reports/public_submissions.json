@@ -1,0 +1,36 @@
+{
+  "metric": "macro Recall@50 on the benchmark platform",
+  "attempts_total": 7,
+  "attempts": [
+    {
+      "attempt": 1,
+      "name": "finetuned_dense_ltr",
+      "method": "CatBoost YetiRankPairwise over the top-200 union of BM25, fine-tuned USER-bge-m3 and SPLADE with leakage-safe click-history features",
+      "notebook": "notebooks/13_finetuned_dense_ltr_experiments.ipynb",
+      "commit": "44e0dfa03519927714bc57f3ff0abbe7cab95516",
+      "file": "answer_finetuned_dense_ltr.csv -> submissions/attempt_1_finetuned_ltr.csv",
+      "sha256": "d017aa45b65f185815e55ae62ce2b9e4e70beb7e0d35cd178fd77b047c0fc923",
+      "offline": {
+        "holdout": "test half of the stratified train holdout, 1226 queries",
+        "recall_at_50": 0.8595432300163132
+      },
+      "public_recall_at_50": 0.698370
+    },
+    {
+      "attempt": 2,
+      "name": "robust_rrf_moderate_fine",
+      "method": "RRF of BM25, zero-shot USER-bge-m3 and fine-tuned USER-bge-m3; rrf_k=20, weights 1 / 0.75 / 1.25 selected on dev-tail; no CatBoost, no click history",
+      "notebook": "notebooks/14_distribution_shift_robust_rrf.ipynb",
+      "commit": "a7ce7dcc3af83968b647717da10442b178111a98",
+      "file": "answer.csv = submissions/attempt_2_robust_rrf.csv",
+      "sha256": "7b4d257955029a8eb7d090a86add9fcd352546fcd91080aa4b4790fb1a95efcc",
+      "offline": {
+        "holdout": "test half of the stratified train holdout",
+        "recall_at_50_test_tail": 0.8624338624338624,
+        "recall_at_50_test_all": 0.8323817292006526,
+        "test_tail_queries": 189
+      },
+      "public_recall_at_50": 0.821129
+    }
+  ]
+}

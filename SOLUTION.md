@@ -74,6 +74,22 @@ Recall@50 равен `0.86243` против `0.84656` у BM25+fine. Paired delta
 99.375% CI `[-0.02646; 0.06349]`, `p=0.253`: внутреннее улучшение не доказано,
 поэтому это явно обозначено как контролируемая публичная проверка переноса.
 
+Фактический Recall@50 второй попытки — **`0.821129`**:
+
+| Попытка | Offline Recall@50 | Public Recall@50 | Разрыв |
+|---|---|---|---|
+| 1. Fine-tuned dense LTR | test `0.85954` | `0.698370` | `−0.161` |
+| 2. Shift-aware RRF | test-tail `0.86243`, test `0.83238` | `0.821129` | `−0.041` / `−0.011` |
+
+Публичный прирост `+0.12276` подтверждает направление shift-гипотезы: supervised
+LTR с popularity/history переобучался на head-запросы holdout. Прирост
+относится ко всей замене LTR/history на RRF. Отдельный вклад весов
+`1 / 0.75 / 1.25` не измерялся, потому что на benchmark нет разметки и каждая
+попытка ограничена. Оставшийся разрыв означает, что holdout по-прежнему не
+моделирует benchmark: category `0` (9.05% benchmark) и тексты, не встречавшиеся
+в train (62.64%), в нём почти отсутствуют. Журнал попыток с sha256 —
+`reports/public_submissions.json`.
+
 ## Найденные ошибки и принятые решения
 
 - Location hard filter терял межрегиональные positives — заменён global/local
@@ -94,6 +110,16 @@ Recall@50 равен `0.86243` против `0.84656` у BM25+fine. Paired delta
   head-query train distribution.
 - Итоговый CSV отдельно проверен на точное покрытие query, 50 уникальных corpus
   IDs, lowercase hex-формат и отсутствие индексной колонки.
+- Аудит воспроизводимости на чистом clone нашёл два дефекта. Notebook 03 читал
+  `item_language.parquet`, который не создавался кодом репозитория: генерация
+  восстановлена в `scripts/build_bm25.py` и даёт побайтно тот же файл. Notebook
+  14 архивировал первую попытку копированием текущего `answer.csv`, поэтому на
+  чистом checkout сохранял туда ответ notebook 05: теперь источник — явный
+  выход notebook 13 `answer_finetuned_dense_ltr.csv`.
+- Закоммиченный `kaggle/finetune_train_gpu.py` фиксирует ревизию
+  `deepvk/USER-bge-m3` `0cc6cfe…`, но исполненная Kaggle-версия 08a скачивала
+  модель без явной ревизии. Это та же ревизия: head репозитория модели не
+  менялся с 2024-07-18.
 
 ## Воспроизведение
 
@@ -108,9 +134,15 @@ Recall@50 равен `0.86243` против `0.84656` у BM25+fine. Paired delta
    pytest
    ```
 
-3. Выполнить локальные notebooks `01`–`03` и построить BM25 artifacts.
+3. Построить BM25 artifacts (`PYTHONPATH=src python scripts/build_bm25.py`),
+   затем выполнить локальные notebooks `01`–`03`.
 4. Запустить `kaggle/04_dense_gpu_experiment.ipynb`, скачать output через
    `scripts/fetch_kaggle_output.sh`, затем выполнить notebook `05`.
+   Все четыре Kaggle kernels публичны. Без собственного GPU-прогона их
+   сохранённые выходы скачиваются без Kaggle-аккаунта командой
+   `python scripts/fetch_public_kaggle_outputs.py --splade` с проверкой sha256.
+   Этот путь нужен для бит-в-бит воспроизведения: повторное LoRA-обучение на
+   2×T4 не детерминировано.
 5. Запустить SPLADE GPU notebook `kaggle/splade/06_splade_gpu_experiment.ipynb`,
    скачать output и выполнить локальные notebooks `06` и `07`.
 6. Запустить `kaggle/finetune/08a_finetune_train_gpu.ipynb`, затем зависимый
@@ -126,3 +158,6 @@ Recall@50 равен `0.86243` против `0.84656` у BM25+fine. Paired delta
 Ключевой финальный notebook:
 `notebooks/14_distribution_shift_robust_rrf.ipynb`. Все random seeds,
 chunking parameters, split и CatBoost iterations сохранены в коде и reports.
+Минимальный путь до текущего `answer.csv` (build_bm25 → 02 → fetch → 05 → 14)
+и результаты проверки на чистом clone с хешами описаны в
+`reports/REPRODUCIBILITY.md`.
