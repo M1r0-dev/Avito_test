@@ -44,6 +44,18 @@ SciPy 1.15.3, PyArrow 24.0.0, CatBoost 1.2.10, Linux x86_64, 22 CPU.
 `labels.parquet` из notebook 02 совпадает с `validation_labels.parquet` в
 выходах kernels 06 и 08b, то есть GPU-этапы работали на том же split.
 
+## Быстрый путь через Git LFS (попытка 3)
+
+Отдельная проверка пути проверяющего: анонимный `git clone` с установленным
+Git LFS (commit `6e8a25d`, ~4 минуты на загрузку 395 MB), в `dataset/` —
+только `benchmark_queries.parquet` и `benchmark_items.parquet`, затем
+`python scripts/generate_answer.py --check`. За 86 s на CPU скрипт записал
+`answer.csv` с sha256 `c24bf119…`, побайтно равный отправленной попытке 3
+(public `0.824331`) и архиву `submissions/attempt_3_learned_fusion.csv`;
+рабочее дерево осталось чистым. Путь не требует GPU, Kaggle, сети и
+переобучения: признаки строятся из LFS-rankings, а скоры — сохранённой
+моделью `models/learned_fusion_attempt3.cbm`.
+
 ## Код Kaggle kernels
 
 Исполненные версии kernels 04 и 08b совпадают с `kaggle/*.ipynb` в репозитории.
