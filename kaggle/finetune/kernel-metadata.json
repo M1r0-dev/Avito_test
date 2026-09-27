@@ -1,7 +1,7 @@
 {
   "id": "m1r0tvorxc/avito-user-bge-m3-domain-adaptation",
   "title": "Avito USER BGE M3 Domain Adaptation",
-  "code_file": "08_finetune_dense_gpu.ipynb",
+  "code_file": "08a_finetune_train_gpu.ipynb",
   "language": "python",
   "kernel_type": "notebook",
   "is_private": true,

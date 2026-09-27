@@ -1,0 +1,21 @@
+{
+  "kernel": "m1r0tvorxc/avito-user-bge-m3-domain-adaptation",
+  "status": "CANCEL_ACKNOWLEDGED",
+  "elapsed_seconds": 43213.74871695,
+  "kaggle_limit_seconds": 43200,
+  "last_completed_stage": "training_pair_preparation",
+  "eligible_pairs": 26878,
+  "unique_training_items": 17033,
+  "training_steps_observed": 0,
+  "failure_stage": "concurrent_base_model_loading_in_torchrun_workers",
+  "saved_outputs": [
+    "finetune_pairs.parquet",
+    "train_lora.py"
+  ],
+  "remediation": [
+    "split training and retrieval into separate committed notebooks",
+    "download the model snapshot once before torchrun",
+    "load the local snapshot serially across DDP ranks",
+    "disable verbose Hugging Face progress output"
+  ]
+}

@@ -14,7 +14,9 @@ wide rankings for controlled query/document pruning, chunking, and local-channel
 ablations. Its CC BY-NC-SA 4.0 license is recorded explicitly. Use
 `scripts/fetch_splade_output.sh` after the kernel completes.
 
-`finetune/08_finetune_dense_gpu.ipynb` performs leakage-safe LoRA domain
-adaptation of `deepvk/USER-bge-m3` on Avito clicks using both T4 GPUs, then
-rebuilds filter-aware rankings. It exports rankings and run metadata only; use
-`scripts/fetch_finetuned_dense_output.sh` after completion.
+Fine-tuning is split across committed Kaggle versions so a long corpus encoding
+cannot discard a trained checkpoint at the 12-hour limit. Stage
+`finetune/08a_finetune_train_gpu.ipynb` performs leakage-safe LoRA adaptation of
+`deepvk/USER-bge-m3` on both T4 GPUs and persists the merged model. Stage 8B
+consumes that saved model and rebuilds filter-aware rankings. Use
+`scripts/fetch_finetuned_dense_output.sh` after retrieval completes.
