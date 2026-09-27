@@ -1,0 +1,205 @@
+{
+  "configs": [
+    "A_it100_selector",
+    "A_it100_blend",
+    "A_it300_selector",
+    "A_it300_blend",
+    "B_it100_selector",
+    "B_it100_blend",
+    "B_it300_selector",
+    "B_it300_blend"
+  ],
+  "pool_depth": 100,
+  "feature_sets": {
+    "A": [
+      "bm25",
+      "bm25_plain",
+      "zero_global",
+      "zero_local",
+      "fine_global",
+      "fine_local",
+      "zero",
+      "fine",
+      "attempt_2",
+      "min_rank",
+      "source_count",
+      "query_tokens",
+      "location_match",
+      "exact_in_title",
+      "exact_in_desc",
+      "title_tokens",
+      "desc_tokens",
+      "title_overlap",
+      "title_coverage",
+      "title_jaccard",
+      "params_overlap",
+      "params_coverage",
+      "params_jaccard",
+      "desc_overlap",
+      "desc_coverage",
+      "desc_jaccard",
+      "filter_overlap",
+      "filter_coverage"
+    ],
+    "B": [
+      "bm25",
+      "bm25_plain",
+      "zero_global",
+      "zero_local",
+      "fine_global",
+      "fine_local",
+      "zero",
+      "fine",
+      "attempt_2",
+      "min_rank",
+      "source_count",
+      "query_tokens",
+      "location_match",
+      "exact_in_title",
+      "exact_in_desc",
+      "title_tokens",
+      "desc_tokens",
+      "title_overlap",
+      "title_coverage",
+      "title_jaccard",
+      "params_overlap",
+      "params_coverage",
+      "params_jaccard",
+      "desc_overlap",
+      "desc_coverage",
+      "desc_jaccard",
+      "filter_overlap",
+      "filter_coverage",
+      "rating",
+      "log_reviews",
+      "log_price",
+      "phone_hidden",
+      "message_forbidden"
+    ]
+  },
+  "dev_comparison": [
+    {
+      "method": "attempt_2",
+      "oof_dev_tail": 0.8352272727272727,
+      "oof_dev": 0.8443447525829255
+    },
+    {
+      "method": "A_it100_selector",
+      "oof_dev_tail": 0.8295454545454546,
+      "oof_dev": 0.8414899401848831
+    },
+    {
+      "method": "A_it100_blend",
+      "oof_dev_tail": 0.8409090909090909,
+      "oof_dev": 0.8435290918977706
+    },
+    {
+      "method": "A_it300_selector",
+      "oof_dev_tail": 0.8352272727272727,
+      "oof_dev": 0.8443447525829255
+    },
+    {
+      "method": "A_it300_blend",
+      "oof_dev_tail": 0.8409090909090909,
+      "oof_dev": 0.8443447525829255
+    },
+    {
+      "method": "B_it100_selector",
+      "oof_dev_tail": 0.8352272727272727,
+      "oof_dev": 0.8488308863512779
+    },
+    {
+      "method": "B_it100_blend",
+      "oof_dev_tail": 0.8409090909090909,
+      "oof_dev": 0.8467917346383905
+    },
+    {
+      "method": "B_it300_selector",
+      "oof_dev_tail": 0.8409090909090909,
+      "oof_dev": 0.8488308863512779
+    },
+    {
+      "method": "B_it300_blend",
+      "oof_dev_tail": 0.8352272727272727,
+      "oof_dev": 0.8467917346383905
+    }
+  ],
+  "selected_on_oof_dev_tail": "B_it300_selector",
+  "test_recall": {
+    "test_tail": 0.9047619047619048,
+    "test": 0.8444806960304513
+  },
+  "bonferroni_alpha": 0.00625,
+  "selected_vs_attempt_2": {
+    "test_tail": {
+      "mean_delta": 0.042328042328042326,
+      "ci_low": 0.007919973544972356,
+      "ci_high": 0.08994708994708994,
+      "p_value_greater": 0.0038498075096245186,
+      "n_queries": 189
+    },
+    "test": {
+      "mean_delta": 0.012098966829798804,
+      "ci_low": -0.0002718868950516589,
+      "ci_high": 0.02528548123980424,
+      "p_value_greater": 0.004899755012249388,
+      "n_queries": 1226
+    }
+  },
+  "directions": {
+    "test_tail": {
+      "wins": 8,
+      "ties": 181,
+      "losses": 0
+    },
+    "test": {
+      "wins": 29,
+      "ties": 1187,
+      "losses": 10
+    }
+  },
+  "primary_confirmed": true,
+  "secondary_confirmed": true,
+  "feature_importance": {
+    "min_rank": 0.0279,
+    "bm25": 0.0248,
+    "fine": 0.0228,
+    "fine_local": 0.0126,
+    "zero": 0.0106,
+    "zero_local": 0.0085,
+    "attempt_2": 0.008,
+    "desc_coverage": 0.0078,
+    "log_reviews": 0.0077,
+    "params_coverage": 0.0038,
+    "fine_global": 0.0033,
+    "rating": 0.0026,
+    "bm25_plain": 0.0025,
+    "source_count": 0.0023,
+    "title_coverage": 0.0022,
+    "exact_in_title": 0.0016,
+    "title_overlap": 0.0013,
+    "desc_overlap": 0.0012,
+    "title_jaccard": 0.0012,
+    "title_tokens": 0.0011,
+    "zero_global": 0.0009,
+    "filter_coverage": 0.0009,
+    "desc_jaccard": 0.0009,
+    "location_match": 0.0009,
+    "exact_in_desc": 0.0006,
+    "desc_tokens": 0.0005,
+    "log_price": 0.0004,
+    "params_jaccard": 0.0002,
+    "params_overlap": 0.0,
+    "phone_hidden": 0.0,
+    "query_tokens": 0.0,
+    "filter_overlap": 0.0,
+    "message_forbidden": 0.0
+  },
+  "selector_latency_cpu_ms": {
+    "p50_ms": 12.4503715,
+    "p95_ms": 60.69143975,
+    "p99_ms": 67.45323323,
+    "mean_ms": 20.520073680000003
+  },
+  "benchmark_overlap_with_attempt_2": 0.8568515497553018
+}
