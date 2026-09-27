@@ -233,5 +233,13 @@
     }
   ],
   "deployment_safe": true,
-  "benchmark_overlap_with_candidate_3": 0.8395269168026103
+  "benchmark_overlap_with_candidate_3": 0.8395269168026103,
+  "c4_submission": {
+    "file": "answer_bm25_lora_v2_selector.csv",
+    "channels": [
+      "bm25",
+      "v2"
+    ],
+    "benchmark_overlap_with_selected": 0.8641761827079935
+  }
 }

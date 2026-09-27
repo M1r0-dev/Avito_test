@@ -449,35 +449,58 @@ deployment_safe = bool(
 print({"deployment_safe": deployment_safe})
 
 # %% [markdown]
-# ## 5. Benchmark-кандидат
+# ## 5. Benchmark-кандидаты
 #
 # `answer_lora_v2.csv` пишется всегда; `answer.csv` заменяется, только если
 # подтверждён primary или secondary endpoint выбранной системы.
+#
+# Дополнительно сохраняем чистую абляцию `C4`: BM25 + LoRA v2 без zero-shot
+# и LoRA v1. Она нужна для отдельной публичной проверки вклада старых dense-
+# каналов. Обучение selector, текстовые признаки, фильтры и structured features
+# остаются идентичными C2/C3 — меняется только набор retrieval-каналов.
 
 # %%
-system = selected_system
-columns = feature_columns(system)
-benchmark_frame = pd.concat([system_features(system, ("benchmark", str(q))) for q in benchmark_queries.query_id],
-                            ignore_index=True)
-benchmark_predictions = top50(benchmark_frame, final_models[system].predict(benchmark_frame[columns]))
 corpus_ids = set(pd.read_parquet(ROOT / "dataset/benchmark_items.parquet", columns=["item_id"]).item_id)
-answer = pd.DataFrame({
-    "query_id": benchmark_queries.query_id.astype(str),
-    "answer": [" ".join(benchmark_predictions[str(q)]) for q in benchmark_queries.query_id],
-})
-assert len(answer) == len(benchmark_queries) == answer.query_id.nunique()
-for item_string in answer.answer:
-    item_ids = item_string.split()
-    assert 1 <= len(item_ids) <= 50 and len(item_ids) == len(set(item_ids))
-    assert all(re.fullmatch(r"[0-9a-f]{16}", item_id) for item_id in item_ids)
-    assert set(item_ids) <= corpus_ids
+
+
+def benchmark_answer(system: str) -> tuple[pd.DataFrame, dict[str, list[str]]]:
+    columns = feature_columns(system)
+    frame = pd.concat([
+        system_features(system, ("benchmark", str(query_id)))
+        for query_id in benchmark_queries.query_id
+    ], ignore_index=True)
+    predictions = top50(frame, final_models[system].predict(frame[columns]))
+    result = pd.DataFrame({
+        "query_id": benchmark_queries.query_id.astype(str),
+        "answer": [" ".join(predictions[str(query_id)]) for query_id in benchmark_queries.query_id],
+    })
+    assert list(result.columns) == ["query_id", "answer"]
+    assert len(result) == len(benchmark_queries) == result.query_id.nunique()
+    for item_string in result.answer:
+        item_ids = item_string.split()
+        assert 1 <= len(item_ids) <= 50 and len(item_ids) == len(set(item_ids))
+        assert all(re.fullmatch(r"[0-9a-f]{16}", item_id) for item_id in item_ids)
+        assert set(item_ids) <= corpus_ids
+    return result, predictions
+
+
+answer, benchmark_predictions = benchmark_answer(selected_system)
 answer.to_csv(ROOT / "answer_lora_v2.csv", index=False)
 if (decision.get("test_tail") or decision.get("test")) and deployment_safe:
     answer.to_csv(ROOT / "answer.csv", index=False)
+
+c4_answer, c4_benchmark_predictions = benchmark_answer("C4")
+c4_answer.to_csv(ROOT / "answer_bm25_lora_v2_selector.csv", index=False)
+
 current = pd.read_csv(ROOT / "answer_light_selector.csv", dtype=str).set_index("query_id").answer
 overlap_with_candidate_3 = float(np.mean([
     len(set(benchmark_predictions[q]) & set(current[q].split())) / 50 for q in current.index]))
 print(f"benchmark overlap with candidate 3: {overlap_with_candidate_3:.3f}")
+c4_overlap_with_selected = float(np.mean([
+    len(set(c4_benchmark_predictions[q]) & set(benchmark_predictions[q])) / 50
+    for q in c4_benchmark_predictions
+]))
+print(f"C4 overlap with selected {selected_system}: {c4_overlap_with_selected:.3f}")
 
 (ROOT / "reports/lora_v2_metrics.json").write_text(json.dumps({
     "v2_local_weight": V2_LOCAL_WEIGHT, "v2_local_weight_dev": weight_scores,
@@ -488,5 +511,10 @@ print(f"benchmark overlap with candidate 3: {overlap_with_candidate_3:.3f}")
     "actual_attempt_3_sanity_test": deployment_test.to_dict("records"),
     "deployment_safe": deployment_safe,
     "benchmark_overlap_with_candidate_3": overlap_with_candidate_3,
+    "c4_submission": {
+        "file": "answer_bm25_lora_v2_selector.csv",
+        "channels": ["bm25", "v2"],
+        "benchmark_overlap_with_selected": c4_overlap_with_selected,
+    },
 }, ensure_ascii=False, indent=2, default=float), encoding="utf-8")
 print("saved reports/lora_v2_metrics.json")
