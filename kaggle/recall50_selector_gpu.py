@@ -113,6 +113,12 @@ RR_OFFSET = 20.0
 if SMOKE:
     LOSSES = {name: LOSSES[name] for name in ("YetiRankPairwise", "LambdaRecall50_hard", "StochasticFilter_RecallAt50")}
     PARAMS = PARAMS[:1]
+# Kaggle v1 остановлен после первого набора параметров (depth 6, l2 3). По его
+# OOF dev выбран один objective; он досчитывается локально на CPU только на
+# этом наборе — другие depth/l2 для него не оценивались.
+if os.environ.get("RECALL50_ONLY_LOSS"):
+    LOSSES = {os.environ["RECALL50_ONLY_LOSS"]: LOSSES[os.environ["RECALL50_ONLY_LOSS"]]}
+    PARAMS = PARAMS[:1]
 
 
 def locate_input() -> Path:

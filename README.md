@@ -95,6 +95,12 @@ Notebooks — основной источник экспериментальны
 14. `notebooks/19_lora_v2_evaluation.ipynb` — channel/system evaluation LoRA v2.
 15. `notebooks/20_lora_v2_rrf_vs_selector.ipynb` — финальное сравнение RRF и
     selector; selector принят и получил public Recall@50 `0.837229`.
+16. `notebooks/25a_recall50_export_pool.ipynb` → `kaggle/recall50_selector/` →
+    `notebooks/25c_recall50_objective_gate.ipynb` — замена `YetiRankPairwise`
+    внутри PU bags на LambdaMART с весами `|ΔRecall@50|` (встроенного Recall@k
+    objective в CatBoost нет: `StochasticFilter` игнорирует `metric=RecallAt`).
+    Test `+0.0053` к attempt 4 и на tail, и на всём test, но незначимо
+    (p `0.50` / `0.15`), поэтому не принято.
 
 SPLADE-stage использует русский checkpoint `naver/neuclir22-splade-ru` и
 контролируемые абляции pruning, chunking и global/local retrieval. Лицензия

@@ -1,0 +1,187 @@
+{
+  "catboost_probe": {
+    "version": "1.2.10",
+    "objectives": [
+      {
+        "objective": "StochasticRank:metric=RecallAt;top=50",
+        "accepted": false,
+        "error": "catboost/private/libs/options/catboost_options.cpp:929: StochasticRank does not support target_metric RecallAt"
+      },
+      {
+        "objective": "LambdaMart:metric=RecallAt;top=50",
+        "accepted": false,
+        "error": "catboost/private/libs/options/catboost_options.cpp:890: LambdaMart does not support target_metric RecallAt"
+      },
+      {
+        "objective": "YetiRank:mode=RecallAt;top=50",
+        "accepted": false,
+        "error": "catboost/private/libs/algo/yetirank_helpers.cpp:42: Unknown weights mode RecallAt"
+      },
+      {
+        "objective": "StochasticFilter:metric=RecallAt;top=50",
+        "accepted": true,
+        "error": ""
+      },
+      {
+        "objective": "StochasticFilter",
+        "accepted": true,
+        "error": ""
+      },
+      {
+        "objective": "StochasticFilter:metric=NDCG;top=50",
+        "accepted": true,
+        "error": ""
+      }
+    ],
+    "stochastic_filter_ignores_metric": true
+  },
+  "kaggle_v1_first_param_set": [
+    {
+      "loss": "LambdaRecall50_soft",
+      "fold0_best": 0.8738,
+      "fold1_best": 0.8603,
+      "seconds_per_job": 53,
+      "oof_dev_approx": 0.86705
+    },
+    {
+      "loss": "QuerySoftMax",
+      "fold0_best": 0.8722,
+      "fold1_best": 0.8619,
+      "seconds_per_job": 522,
+      "oof_dev_approx": 0.86705
+    },
+    {
+      "loss": "LambdaRecall50_hard",
+      "fold0_best": 0.8722,
+      "fold1_best": 0.8548,
+      "seconds_per_job": 53,
+      "oof_dev_approx": 0.8634999999999999
+    },
+    {
+      "loss": "YetiRankPairwise",
+      "fold0_best": 0.8706,
+      "fold1_best": 0.8545,
+      "seconds_per_job": 79,
+      "oof_dev_approx": 0.86255
+    },
+    {
+      "loss": "YetiRank",
+      "fold0_best": 0.8673,
+      "fold1_best": 0.8513,
+      "seconds_per_job": 55,
+      "oof_dev_approx": 0.8593
+    },
+    {
+      "loss": "StochasticFilter_RecallAt50",
+      "fold0_best": 0.8401,
+      "fold1_best": 0.8537,
+      "seconds_per_job": 131,
+      "oof_dev_approx": 0.8469
+    }
+  ],
+  "stage25b_run": {
+    "catboost": "1.2.10",
+    "gpus": 0,
+    "lambda_on_gpu": false,
+    "learning_rate": 0.06,
+    "border_count": 254,
+    "max_trees": 1000,
+    "checkpoint": 100,
+    "round_trees": 50,
+    "pu_budget": 48,
+    "pu_seeds": [
+      41,
+      42,
+      43
+    ],
+    "losses": {
+      "LambdaRecall50_soft": {
+        "kind": "lambda",
+        "tau": 8.0
+      }
+    },
+    "params": [
+      {
+        "depth": 6,
+        "l2_leaf_reg": 3.0
+      }
+    ],
+    "seconds": 185.18479466438293
+  },
+  "jobs": [
+    {
+      "loss": "LambdaRecall50_soft",
+      "param_index": 0,
+      "fold": 0,
+      "device": null,
+      "seconds": 84.30773425102234,
+      "status": "done"
+    },
+    {
+      "loss": "LambdaRecall50_soft",
+      "param_index": 0,
+      "fold": 1,
+      "device": null,
+      "seconds": 82.87660312652588,
+      "status": "done"
+    }
+  ],
+  "best_per_loss": [
+    {
+      "loss": "LambdaRecall50_soft",
+      "depth": 6,
+      "l2_leaf_reg": 3.0,
+      "trees": 100,
+      "dev": 0.8626971179989124,
+      "dev_tail": 0.8181818181818182
+    }
+  ],
+  "selected": {
+    "loss": "LambdaRecall50_soft",
+    "depth": 6,
+    "l2_leaf_reg": 3.0,
+    "trees": 100,
+    "dev": 0.8626971179989124,
+    "dev_tail": 0.8181818181818182
+  },
+  "test_vs_attempt4": [
+    {
+      "segment": "test_tail",
+      "candidate_recall": 0.9153439153439153,
+      "baseline_recall": 0.91005291005291,
+      "mean_delta": 0.005291005291005291,
+      "ci_low": -0.021164021164021163,
+      "ci_high": 0.031746031746031744,
+      "p_value_greater": 0.4968251587420629,
+      "n_queries": 189,
+      "wins": 3,
+      "losses": 2
+    },
+    {
+      "segment": "test",
+      "candidate_recall": 0.8665035345296356,
+      "baseline_recall": 0.8612017400761283,
+      "mean_delta": 0.005301794453507341,
+      "ci_low": -0.005301794453507341,
+      "ci_high": 0.01631321370309951,
+      "p_value_greater": 0.15414229288535572,
+      "n_queries": 1226,
+      "wins": 21,
+      "losses": 14
+    }
+  ],
+  "decision": {
+    "selected_loss": "LambdaRecall50_soft",
+    "tail_nonnegative": true,
+    "primary_significant": false,
+    "secondary_significant": false,
+    "accepted": false
+  },
+  "ablation_vs_yetirank_pairwise": [],
+  "lambda_recall_vs_stochastic_filter": [],
+  "candidate": {
+    "file": "answer_recall50_objective_candidate.csv",
+    "sha256": "994ef6f382202168e2a3a0bb6cc7673823a503af47b6d5b88e231e99d2ad7f0c",
+    "benchmark_overlap_with_attempt6": 0.8422185970636215
+  }
+}
