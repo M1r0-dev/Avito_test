@@ -5,8 +5,9 @@
 Все модели работают локально, без внешних inference API.
 
 Краткое описание финального подхода, ошибок и полного воспроизведения находится
-в [`SOLUTION.md`](SOLUTION.md). Фактический Recall@50 отправленного
-`answer.csv` на платформе: **0.698370**; offline holdout Recall@50: `0.85954`.
+в [`SOLUTION.md`](SOLUTION.md). Первая публичная попытка с LTR получила
+Recall@50 **0.698370** при offline `0.85954`. Текущий `answer.csv` — вторая,
+shift-aware RRF-попытка; её публичная оценка ещё не получена.
 
 ## Порядок исследования
 
@@ -30,8 +31,12 @@ Notebooks — основной источник экспериментальны
    leakage-safe click history; канал улучшает RRF, но отклонён внутри LTR.
 9. `notebooks/10_history_ltr_experiments.ipynb`–`12_ltr_objective_experiments.ipynb`
    — отрицательные абляции расширения pool, history-features и ranking losses.
-10. `notebooks/13_finetuned_dense_ltr_experiments.ipynb` — принятая замена
-    zero-shot dense на адаптированный канал; текущий test Recall@50 `0.85954`.
+10. `notebooks/13_finetuned_dense_ltr_experiments.ipynb` — замена zero-shot
+    dense на адаптированный канал; offline test Recall@50 `0.85954`, но
+    публичная попытка показала сильный validation shift.
+11. `notebooks/14_distribution_shift_robust_rrf.ipynb` — аудит shift и текущий
+    submission без LTR/history: BM25 + zero-shot dense + fine-tuned dense RRF,
+    выбранный на редких запросах.
 
 SPLADE-stage использует русский checkpoint `naver/neuclir22-splade-ru` и
 контролируемые абляции pruning, chunking и global/local retrieval. Лицензия
@@ -129,7 +134,14 @@ Leakage-safe LoRA дообучение USER-bge-m3 на 17 033 уникаль�
 на fine-tuned dense внутри той же трёхканальной LTR-схемы улучшила текущий
 лучший результат с `0.84058` до `0.85954`: paired delta `+0.01896`, 99.5% CI
 `[0.00116; 0.03732]`, randomization `p=0.00175` при пороге `0.005`.
-Результат принят и записан в `answer.csv`; до цели `0.9` осталось `0.04046`.
+Эта offline-гипотеза была отправлена первой и получила публичный `0.698370`.
+Notebook 14 показал, что 72.27% benchmark-текстов имеют train frequency `<=1`
+против 14.89% в holdout, а 62.64% вообще не встречаются в train. Поэтому
+текущий `answer.csv` заменён на робастный RRF без CatBoost/history. На
+независимом tail-test он получил `0.86243` против `0.84656` у BM25+fine;
+дельта `+0.01587`, но строгий 99.375% CI `[-0.02646; 0.06349]` пересекает ноль.
+Это внешняя проверка обоснованной shift-гипотезы, а не заявление о доказанном
+приросте до получения публичного score.
 
 ## Лицензии внешних моделей
 

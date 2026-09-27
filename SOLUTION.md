@@ -2,7 +2,7 @@
 
 Финальный файл — `answer.csv`. Репозиторий содержит полный исследовательский
 pipeline: EDA, фиксированный validation split, retrieval-эксперименты,
-статистические тесты, GPU-notebooks и финальную LTR-сборку.
+статистические тесты, GPU-notebooks и shift-aware RRF-сборку.
 
 ## Данные и признаки
 
@@ -24,7 +24,7 @@ EDA показал, что description и параметры часто длин
 language hard filter отклонён: корпус уже на 99.87% кириллический, а удаление
 латиницы теряет бренды и смешанные названия.
 
-## Модели и итоговый pipeline
+## Модели и текущий submission
 
 1. BM25 ищет lexical candidates по title, parameters и description.
 2. Русский `deepvk/USER-bge-m3` дообучается leakage-safe LoRA на 17 033
@@ -32,11 +32,11 @@ language hard filter отклонён: корпус уже на 99.87% кири�
    обучения до sampling.
 3. Fine-tuned bi-encoder строит global и location-local dense rankings по
    554 920 passages на двух Tesla T4.
-4. Русский SPLADE использован как дополнительный источник широкого candidate
-   pool, хотя его прямой RRF-прирост не прошёл статистический gate.
-5. CatBoostRanker с `YetiRankPairwise` выбирает финальные 50 items из top-200
-   каждого retrieval-канала. Он использует rank, content, filter, metadata и
-   leakage-safe history features.
+4. Zero-shot и fine-tuned dense rankings объединяются с BM25 через RRF с
+   `k=20` и весами `1 / 0.75 / 1.25`. Веса выбраны только на редком dev-tail.
+5. SPLADE и CatBoostRanker подробно исследованы, но не входят в текущий
+   submission. LTR дал лучший offline score, однако плохо перенёсся на
+   benchmark; SPLADE не прошёл прямой statistical gate.
 
 Open-source зависимости: pandas, NumPy, scikit-learn, SentenceTransformers,
 PEFT, PyTorch, CatBoost и PyArrow. Внешние inference API не используются.
@@ -51,7 +51,7 @@ signatures. Он делится на dev/test; параметры выбираю
 interval и односторонним sign-randomization test. Порог значимости уменьшается
 с учётом последовательных model-family экспериментов.
 
-Финальная offline-оценка:
+Offline-оценка первой LTR-попытки:
 
 - прежний zero-shot dense LTR: Recall@50 `0.84058`;
 - fine-tuned dense LTR: Recall@50 `0.85954`;
@@ -59,12 +59,20 @@ interval и односторонним sign-randomization test. Порог зн�
 - 99.5% CI `[0.00116; 0.03732]`;
 - randomization `p=0.00175` при threshold `0.005`.
 
-Фактический Recall@50 загруженного файла на платформе — **`0.698370`**. Разрыв
+Фактический Recall@50 первой загруженной попытки — **`0.698370`**. Разрыв
 с offline-оценкой явно указан: train-derived holdout переоценивает перенос на
 benchmark. Вероятные причины — shift запросов/объявлений, переоценка head-query
 и popularity/history сигналов, а также многократная последовательная адаптация
 к одному holdout. Это ограничение текущей validation-схемы, а не форматная
-ошибка submission.
+ошибка submission. Аудит после этой попытки показал: 62.64% benchmark query
+texts не встречаются в train, 72.27% имеют train frequency `<=1`, тогда как в
+holdout tail занимает только 14.89%. Кроме того, category `0` составляет 9.05%
+benchmark против 0.08% holdout.
+
+Текущий shift-aware RRF выбран на dev-tail. На независимом test-tail его
+Recall@50 равен `0.86243` против `0.84656` у BM25+fine. Paired delta `+0.01587`,
+99.375% CI `[-0.02646; 0.06349]`, `p=0.253`: внутреннее улучшение не доказано,
+поэтому это явно обозначено как контролируемая публичная проверка переноса.
 
 ## Найденные ошибки и принятые решения
 
@@ -80,8 +88,10 @@ benchmark. Вероятные причины — shift запросов/объя
 - Kaggle `torchao 0.10` конфликтовал с Transformers — неиспользуемый optional
   пакет удаляется перед PEFT training.
 - History-expanded pool, history-only LTR features и альтернативные ranking
-  objectives ухудшили test Recall и были отклонены; `answer.csv` ими не
-  перезаписывался.
+  objectives ухудшили test Recall и были отклонены.
+- LTR улучшал исходный holdout, но публичный результат выявил covariate shift;
+  текущий submission исключает CatBoost и history, уменьшая зависимость от
+  head-query train distribution.
 - Итоговый CSV отдельно проверен на точное покрытие query, 50 уникальных corpus
   IDs, lowercase hex-формат и отсутствие индексной колонки.
 
@@ -108,8 +118,11 @@ benchmark. Вероятные причины — shift запросов/объя
    rankings командой `scripts/fetch_finetuned_dense_output.sh`.
 7. Выполнить notebooks `08`, `12` и `13`. Notebook `12` материализует
    зафиксированную zero-shot control pair table; notebook `13` обучает
-   fine-tuned dense LTR и записывает `answer.csv` только после statistical gate.
+   fine-tuned dense LTR первой попытки.
+8. Выполнить `notebooks/14_distribution_shift_robust_rrf.ipynb`: он измеряет
+   shift, выбирает RRF на dev-tail, проводит paired-тест на test-tail, сохраняет
+   предыдущую попытку и воспроизводит текущий `answer.csv`.
 
 Ключевой финальный notebook:
-`notebooks/13_finetuned_dense_ltr_experiments.ipynb`. Все random seeds,
+`notebooks/14_distribution_shift_robust_rrf.ipynb`. Все random seeds,
 chunking parameters, split и CatBoost iterations сохранены в коде и reports.
