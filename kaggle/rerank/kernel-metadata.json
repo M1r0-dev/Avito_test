@@ -1,0 +1,16 @@
+{
+  "id": "m1r0tvorxc/avito-cross-encoder-rerank",
+  "title": "Avito Cross Encoder Rerank",
+  "code_file": "09_cross_encoder_rerank_gpu.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": false,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": true,
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": ["m1r0tvorxc/avito-candidate-data", "m1r0tvorxc/avito-rerank-pool"],
+  "competition_sources": [],
+  "kernel_sources": [],
+  "model_sources": []
+}
