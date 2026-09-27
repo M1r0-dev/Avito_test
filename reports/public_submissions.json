@@ -33,8 +33,8 @@
       "public_recall_at_50": 0.821129
     },
     {
-      "attempt": null,
-      "name": "candidate_3_light_learned_fusion",
+      "attempt": 3,
+      "name": "light_learned_fusion",
       "method": "CatBoost YetiRankPairwise fusion over the union of top-100 BM25 / zero-shot / fine-tuned dense: channel ranks, token overlaps, location match, item priors; no click history",
       "notebook": "notebooks/17_light_candidate_selector.ipynb",
       "commit": "7993fa6357daa85a291a7930ceb61dd57785681d",
@@ -61,7 +61,12 @@
           "p": 0.0049
         }
       },
-      "public_recall_at_50": null
+      "public_recall_at_50": 0.824331,
+      "public_delta_vs_attempt_2": 0.003202,
+      "offline_to_public_gap": {
+        "test_tail": -0.080431,
+        "test_all": -0.02015
+      }
     }
   ]
 }

@@ -20,16 +20,20 @@
 |---|---|---|---|---|---|
 | 1 | CatBoost LTR: BM25 + fine-tuned dense + SPLADE + click history | 13 | `44e0dfa` | test `0.85954` | **0.698370** |
 | 2 | RRF BM25 + zero-shot dense + fine-tuned dense, `1 / 0.75 / 1.25` | 14 | `a7ce7dc` | test-tail `0.86243`, test `0.83238` | **0.821129** |
-| кандидат 3 | те же каналы, learned fusion (CatBoost по рангам и token overlap) вместо RRF | 17 | `7993fa6` | test-tail `0.90476`, test `0.84448` | не отправлялся |
+| 3 | те же каналы, learned fusion (CatBoost по рангам и token overlap) вместо RRF | 17 | `7993fa6` | test-tail `0.90476`, test `0.84448` | **0.824331** |
 
 Отказ от LTR и click history поднял публичный Recall@50 на `+0.12276`, а
 разрыв offline→public сократился с `−0.161` до `−0.041`. Это согласуется с
 гипотезой covariate shift из notebook 14, но holdout всё ещё оптимистичен.
 
-Текущий `answer.csv` — кандидат 3 (`c24bf119…`). Против попытки 2 на
-test-tail `+0.0423`, 99.375% CI `[0.0079; 0.0899]`, `p=0.0039`, 0 проигрышей
-из 189 запросов; на test `+0.0121`, `p=0.0049`, CI касается нуля
-(`−0.0003`). Попытка 2 сохранена в `submissions/attempt_2_robust_rrf.csv`.
+Текущий `answer.csv` — попытка 3 (`c24bf119…`), public `0.824331`:
+`+0.0032` к попытке 2. Offline против попытки 2 было test-tail `+0.0423`
+(99.375% CI `[0.0079; 0.0899]`, `p=0.0039`) и test `+0.0121` (`p=0.0049`):
+направление перенеслось, величина — нет. Разрыв offline→public вырос с
+`−0.041` до `−0.080` на test-tail, то есть выигрыш селектора, обученного на
+1 226 dev-запросах holdout, в основном holdout-специфичен; test-tail из 189
+запросов слишком мал, чтобы надёжно предсказывать величину переноса.
+Попытка 2 сохранена в `submissions/attempt_2_robust_rrf.csv`.
 Журнал с sha256 файлов:
 [`reports/public_submissions.json`](reports/public_submissions.json).
 
