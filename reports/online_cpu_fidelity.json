@@ -1,0 +1,54 @@
+{
+  "channel_agreement_cpu_fp32_vs_gpu_fp16": [
+    {
+      "channel": "global",
+      "identical": 0.0,
+      "empty": 0.0,
+      "overlap_at_50": 0.9853833605220228,
+      "overlap_at_250": 0.9932381729200653
+    },
+    {
+      "channel": "local",
+      "identical": 0.183115823817292,
+      "empty": 0.17414355628058728,
+      "overlap_at_50": 0.9980383360522023,
+      "overlap_at_250": 0.9987127402602896
+    }
+  ],
+  "non_inferiority_margin": -0.005,
+  "alpha_one_sided": 0.025,
+  "test": [
+    {
+      "segment": "test_tail",
+      "online_cpu": 0.91005291005291,
+      "offline_gpu": 0.91005291005291,
+      "mean_delta": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "p_value_greater": 1.0,
+      "n_queries": 189,
+      "wins": 0,
+      "losses": 0,
+      "identical_top50": 0.7619047619047619,
+      "non_inferior": true
+    },
+    {
+      "segment": "test",
+      "online_cpu": 0.8628330614464382,
+      "offline_gpu": 0.8612017400761283,
+      "mean_delta": 0.0016313213703099511,
+      "ci_low": 0.0,
+      "ci_high": 0.004078303425774877,
+      "p_value_greater": 0.25168741562921854,
+      "n_queries": 1226,
+      "wins": 2,
+      "losses": 0,
+      "identical_top50": 0.733278955954323,
+      "non_inferior": true
+    }
+  ],
+  "benchmark": {
+    "top50_overlap_with_attempt6": 0.9937928221859708,
+    "identical_top50_sets": 0.7504078303425775
+  }
+}
