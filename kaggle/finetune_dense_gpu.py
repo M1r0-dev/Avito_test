@@ -1,10 +1,9 @@
 # %% [markdown]
-# # Domain adaptation of USER-bge-m3 on Avito clicks (2×T4)
+# # Stage 8B — retrieval with adapted USER-bge-m3 (2×T4)
 #
-# Этот notebook проверяет, улучшает ли supervised domain adaptation русский
-# dense retriever. Из train полностью исключаются пять полей каждого validation
-# query signature. Поэтому ни текст, ни фильтр, ни location/category конкретного
-# holdout-запроса не могут участвовать в обучении.
+# Этот notebook загружает модель, сохранённую leakage-safe этапом 8A, кодирует
+# корпус и строит два dense-канала: глобальный и внутри location. Разделение
+# обучения и retrieval гарантирует сохранность модели при 12-часовом лимите.
 #
 # Выбор обучения:
 #
@@ -25,19 +24,12 @@ import hashlib
 import json
 import os
 import re
-import subprocess
-import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import torch
 from sentence_transformers import SentenceTransformer, models
-
-subprocess.run(
-    [sys.executable, "-m", "pip", "install", "-q", "peft>=0.12,<1"],
-    check=True,
-)
 
 MODEL = "deepvk/USER-bge-m3"
 MODEL_LICENSE = "apache-2.0"
@@ -106,6 +98,17 @@ def locate_data() -> Path:
     if not roots:
         raise FileNotFoundError("benchmark_items.parquet not found under /kaggle/input")
     return roots[0].parent
+
+
+def locate_tuned_model() -> Path:
+    candidates = []
+    for metrics in Path("/kaggle/input").rglob("training_metrics.json"):
+        model_dir = metrics.parent
+        if (model_dir / "config.json").exists() and list(model_dir.glob("*.safetensors")):
+            candidates.append(model_dir)
+    if len(candidates) != 1:
+        raise RuntimeError(f"Expected exactly one tuned model, found {candidates}")
+    return candidates[0]
 
 
 def encode_multi_gpu(model: SentenceTransformer, texts: list[str], batch_size: int) -> np.ndarray:
@@ -218,11 +221,11 @@ def item_rankings(
 
 
 # %% [markdown]
-# ## Leakage-safe training pairs
+# ## Filter-aware corpus retrieval
 #
-# Anti-join выполняется до выбора одного примера на item. Итоговый parquet
-# содержит только query, положительный passage и category для формирования
-# category-hard batches; никакие validation labels не передаются trainer-у.
+# Категория и минимальный рейтинг применяются как строгие ограничения при
+# свёртке chunk-level выдачи в item-level. Location остаётся отдельным каналом,
+# чтобы локальная релевантность не уничтожала recall глобального поиска.
 
 # %%
 TRAIN_SCRIPT = r'''
@@ -317,42 +320,8 @@ def main() -> None:
     items["item_id"] = items.item_id.astype(str)
     manifest = pd.read_parquet(data / "validation_manifest.parquet")
     labels = pd.read_parquet(data / "validation_labels.parquet")
-    train = pd.read_parquet(data / "train.parquet", columns=QUERY_COLUMNS + ["item_id"])
-    train["item_id"] = train.item_id.astype(str)
-
-    marked = train.merge(
-        manifest[QUERY_COLUMNS].drop_duplicates().assign(_validation=1),
-        on=QUERY_COLUMNS, how="left",
-    )
-    eligible = marked[marked._validation.isna()].drop(columns="_validation")
-    eligible = eligible[eligible.item_id.isin(set(items.item_id))].drop_duplicates()
-    # One document per batch epoch prevents identical documents acting as negatives.
-    pairs = eligible.sample(frac=1, random_state=42).drop_duplicates("item_id")
-    pairs = pairs.merge(items, on="item_id", how="inner", validate="one_to_one")
-    leakage_check = pairs.merge(
-        manifest[QUERY_COLUMNS].drop_duplicates(), on=QUERY_COLUMNS, how="inner"
-    )
-    assert pairs.item_id.is_unique and leakage_check.empty
-    pairs["query_text"] = [query_text(row) for row in pairs.itertuples(index=False)]
-    pairs["document_text"] = [
-        choose_positive_passage(query, row)
-        for query, row in zip(pairs.query_text, pairs.itertuples(index=False))
-    ]
-    pairs["_shuffle"] = np.random.default_rng(42).random(len(pairs))
-    pairs = pairs.sort_values(["item_category_id", "_shuffle"])
-    pair_path = output / "finetune_pairs.parquet"
-    pairs[["query_text", "document_text", "item_category_id"]].to_parquet(pair_path, index=False)
-    print(f"eligible={len(eligible):,}; unique training items={len(pairs):,}", flush=True)
-
-    train_script = output / "train_lora.py"
-    train_script.write_text(TRAIN_SCRIPT, encoding="utf-8")
-    tuned_model = output / "user_bge_m3_avito"
-    environment = os.environ.copy()
-    environment["TOKENIZERS_PARALLELISM"] = "false"
-    subprocess.run([
-        "torchrun", "--standalone", "--nproc_per_node=2", str(train_script),
-        "--pairs", str(pair_path), "--output", str(tuned_model), "--model", MODEL,
-    ], check=True, env=environment)
+    tuned_model = locate_tuned_model()
+    print(f"tuned model: {tuned_model}", flush=True)
 
     benchmark = pd.read_parquet(data / "benchmark_queries.parquet")
     benchmark["query_key"] = benchmark.query_id.astype(str)
@@ -393,8 +362,8 @@ def main() -> None:
     )
     training_metrics = json.loads((tuned_model / "training_metrics.json").read_text())
     run = {
+        "stage": "retrieval_only",
         "base_model": MODEL, "license": MODEL_LICENSE,
-        "eligible_pairs_after_holdout_exclusion": len(eligible),
         "training": training_metrics,
         "items": len(items), "passages": len(passage_item_rows), "queries": len(queries),
         "chunk_words": CHUNK_WORDS, "overlap": CHUNK_OVERLAP, "max_chunks": MAX_CHUNKS,

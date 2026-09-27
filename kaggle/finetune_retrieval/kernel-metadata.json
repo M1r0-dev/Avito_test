@@ -1,0 +1,16 @@
+{
+  "id": "m1r0tvorxc/avito-finetuned-dense-retrieval",
+  "title": "Avito Finetuned Dense Retrieval",
+  "code_file": "08b_finetuned_dense_retrieval.ipynb",
+  "language": "python",
+  "kernel_type": "notebook",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "machine_shape": "NvidiaTeslaT4",
+  "dataset_sources": ["m1r0tvorxc/avito-candidate-data"],
+  "competition_sources": [],
+  "kernel_sources": ["m1r0tvorxc/avito-user-bge-m3-domain-adaptation"],
+  "model_sources": []
+}
