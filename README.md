@@ -14,6 +14,27 @@
 в [`SOLUTION.md`](SOLUTION.md), проверка воспроизводимости — в
 [`reports/REPRODUCIBILITY.md`](reports/REPRODUCIBILITY.md).
 
+## Быстрый запуск финального решения
+
+Нужен [Git LFS](https://git-lfs.com): индекс BM25, rankings каналов и модель
+fusion (~394 MB) хранятся в репозитории через LFS. GPU, Kaggle и сеть не нужны.
+
+```bash
+git lfs install
+git clone https://github.com/M1r0-dev/Avito_test.git && cd Avito_test
+# положить benchmark_queries.parquet и benchmark_items.parquet из архива задачи в dataset/
+python -m venv .venv && source .venv/bin/activate && pip install -e .
+python scripts/generate_answer.py --check   # ~1.5 мин на CPU
+```
+
+Скрипт строит пул кандидатов из сохранённых каналов (BM25, zero-shot и LoRA
+USER-bge-m3), считает признаки learned fusion, применяет сохранённую модель
+`models/learned_fusion_attempt3.cbm`, пишет `answer.csv`, проверяет формат
+submission и sha256. `--check` падает, если файл отличается от отправленной
+попытки 3 (`c24bf119…`, public `0.824331`). Если репозиторий склонирован без
+LFS, файлы в `artifacts/` будут текстовыми указателями — выполните
+`git lfs pull`.
+
 ## Публичные попытки
 
 | # | Метод | Notebook | Commit | Offline Recall@50 | Public Recall@50 |
@@ -112,8 +133,11 @@ dataset/
 └── benchmark_items.parquet
 ```
 
-Raw Parquet, индексы, embeddings, Kaggle staging и промежуточные submissions
-игнорируются Git.
+Raw Parquet задачи в Git не хранятся. Артефакты финального решения
+(`artifacts/bm25/`, `artifacts/validation/`, rankings трёх каналов и
+`models/learned_fusion_attempt3.cbm`) лежат в Git LFS; остальные индексы,
+embeddings, Kaggle staging и промежуточные submissions игнорируются.
+Отправленные на платформу файлы архивированы в `submissions/attempt_*.csv`.
 
 ## Установка
 
@@ -124,9 +148,11 @@ pip install -e '.[dev]'
 pytest
 ```
 
-## Быстрое воспроизведение `answer.csv` (CPU, ~6 минут)
+## Полное воспроизведение из исходных данных (CPU, ~15 минут)
 
-GPU-этапы выполнены публичными Kaggle kernels:
+Без LFS-артефактов все CPU-этапы пересобираются из трёх parquet задачи, а
+выходы GPU-этапов скачиваются с Kaggle. GPU-этапы выполнены публичными
+Kaggle kernels:
 [zero-shot dense](https://www.kaggle.com/code/m1r0tvorxc/avito-russian-dense-candidate-retrieval),
 [SPLADE](https://www.kaggle.com/code/m1r0tvorxc/avito-russian-splade-candidate-retrieval),
 [LoRA training](https://www.kaggle.com/code/m1r0tvorxc/avito-user-bge-m3-domain-adaptation),
@@ -141,12 +167,17 @@ jupyter nbconvert --to notebook --execute --inplace notebooks/02_validation_desi
 python scripts/fetch_public_kaggle_outputs.py            # --splade для notebooks 06–13
 jupyter nbconvert --to notebook --execute --inplace notebooks/05_dense_rrf_experiments.ipynb
 jupyter nbconvert --to notebook --execute --inplace notebooks/14_distribution_shift_robust_rrf.ipynb
-sha256sum answer.csv  # 7b4d257955029a8eb7d090a86add9fcd352546fcd91080aa4b4790fb1a95efcc
+sha256sum answer.csv  # попытка 2: 7b4d257955029a8eb7d090a86add9fcd352546fcd91080aa4b4790fb1a95efcc
+jupyter nbconvert --to notebook --execute --inplace notebooks/17_light_candidate_selector.ipynb
+sha256sum answer.csv  # попытка 3: c24bf119dc311a5f333570f6fde19e55dfe40f25d578b0f347c2699388a44642
 ```
 
 Notebook 05 материализует `artifacts/rankings/bm25_rankings.parquet` и
 перезаписывает `answer.csv` двухканальным baseline; notebook 14 записывает
-итоговый файл поверх.
+попытку 2, notebook 17 обучает learned fusion на dev, сохраняет модель и
+записывает попытку 3. Обучение CatBoost детерминировано на эталонной машине
+(повторный прогон дал тот же файл); на другом CPU надёжнее путь через
+сохранённую модель (`scripts/generate_answer.py`).
 
 ## Воспроизведение текущего baseline
 
