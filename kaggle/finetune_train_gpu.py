@@ -45,6 +45,7 @@ subprocess.run(
 )
 
 MODEL = "deepvk/USER-bge-m3"
+MODEL_REVISION = "0cc6cfe48e260fb0474c753087a69369e88709ae"
 MODEL_LICENSE = "apache-2.0"
 QUERY_COLUMNS = [
     "search_query", "search_location_id", "search_is_delivery_search",
@@ -239,7 +240,7 @@ def main() -> None:
     print(f"eligible={len(eligible):,}; unique training items={len(pairs):,}", flush=True)
 
     # Resolve every remote file before DDP starts. Workers receive only a local path.
-    model_path = snapshot_download(MODEL)
+    model_path = snapshot_download(MODEL, revision=MODEL_REVISION)
     print(f"model snapshot ready: {model_path}", flush=True)
     train_script = output / "train_lora.py"
     train_script.write_text(TRAIN_SCRIPT, encoding="utf-8")
@@ -253,7 +254,8 @@ def main() -> None:
 
     metrics = json.loads((tuned_model / "training_metrics.json").read_text())
     run = {
-        "stage": "train_only", "base_model": MODEL, "license": MODEL_LICENSE,
+        "stage": "train_only", "base_model": MODEL, "revision": MODEL_REVISION,
+        "license": MODEL_LICENSE,
         "eligible_pairs_after_holdout_exclusion": len(eligible),
         "unique_training_items": len(pairs), "training": metrics,
         "chunk_words": CHUNK_WORDS, "overlap": CHUNK_OVERLAP,
