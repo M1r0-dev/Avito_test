@@ -1,0 +1,50 @@
+{
+  "encoder": "deepvk/USER-bge-m3",
+  "revision": "0cc6cfe48e260fb0474c753087a69369e88709ae",
+  "max_length": 256,
+  "precision": "fp32, no quantization",
+  "vectors": {
+    "queries": 4904,
+    "min_cosine": 0.9999991655349731,
+    "max_abs_diff": 1.2516975402832031e-06
+  },
+  "identical_item_rankings_v2_matrix": {
+    "global": 0.7677406199021207,
+    "local": 0.965742251223491
+  },
+  "lora_v2_onnx": {
+    "min_cosine_vs_kaggle_fp16": 0.9999977946281433,
+    "mean_cosine_vs_kaggle_fp16": 0.9999995231628418,
+    "non_inferiority_margin": -0.005,
+    "alpha_one_sided": 0.025,
+    "test": [
+      {
+        "segment": "test_tail",
+        "online_onnx_cpu": 0.91005291005291,
+        "offline_gpu": 0.91005291005291,
+        "mean_delta": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.0,
+        "p_value_greater": 1.0,
+        "n_queries": 189,
+        "wins": 0,
+        "losses": 0,
+        "non_inferior": true
+      },
+      {
+        "segment": "test",
+        "online_onnx_cpu": 0.86310494834149,
+        "offline_gpu": 0.8612017400761283,
+        "mean_delta": 0.0019032082653616094,
+        "ci_low": 0.0,
+        "ci_high": 0.004622077215878194,
+        "p_value_greater": 0.12384380780960952,
+        "n_queries": 1226,
+        "wins": 3,
+        "losses": 0,
+        "non_inferior": true
+      }
+    ],
+    "benchmark_top50_overlap_with_attempt6": 0.9936786296900489
+  }
+}

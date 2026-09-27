@@ -34,6 +34,18 @@ def query_text(row: pd.Series | dict) -> str:
     return f"query: {query} {filters}".strip()
 
 
+def dense_query_text(row: pd.Series | dict) -> str:
+    """Query text exactly as the USER-bge-m3 Kaggle kernels (04, 10B) encoded it.
+
+    Unlike `query_text` (BM25 and the e5 experiment) there is no "query: "
+    prefix: with it the LoRA v2 query vectors reach only cosine ~0.93 to the
+    saved Kaggle vectors instead of 0.999999 (notebook 28), and Recall@50 drops.
+    """
+    query = clean_text(row.get("search_query", ""))
+    filters = clean_text(row.get("search_infm_params_text", ""))
+    return f"{query} {filters}".strip()
+
+
 def item_passages(
     row: pd.Series | dict,
     chunk_words: int = 140,
