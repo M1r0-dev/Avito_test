@@ -32,6 +32,13 @@ import pandas as pd
 import torch
 from huggingface_hub import snapshot_download
 
+# Kaggle's image currently contains torchao 0.10, while its Transformers build
+# accepts torchao only from 0.16. We do not use quantization, so removing the
+# optional incompatible package is safer than changing the CUDA/PyTorch stack.
+subprocess.run(
+    [sys.executable, "-m", "pip", "uninstall", "-y", "torchao"],
+    check=True,
+)
 subprocess.run(
     [sys.executable, "-m", "pip", "install", "-q", "peft>=0.12,<1"],
     check=True,

@@ -1,0 +1,15 @@
+{
+  "kernel": "m1r0tvorxc/avito-user-bge-m3-domain-adaptation",
+  "version": 3,
+  "status": "ERROR",
+  "elapsed_seconds": 117.065876447,
+  "completed_checks": [
+    "remote snapshot downloaded once",
+    "rank 0 loaded the complete local checkpoint",
+    "rank 1 loaded the complete local checkpoint"
+  ],
+  "failure_stage": "PEFT model construction",
+  "error": "Found an incompatible version of torchao 0.10.0; Transformers requires above 0.16.0",
+  "root_cause": "an unused optional Kaggle image package was detected by Transformers",
+  "remediation": "uninstall torchao before importing PEFT/Transformers in DDP workers"
+}
