@@ -87,8 +87,8 @@ K = 50
 SEED = 42
 LEARNING_RATE = 0.06
 BORDER_COUNT = 254
-MAX_TREES = 100 if SMOKE else 1000
-CHECKPOINT = 50 if SMOKE else 100
+MAX_TREES = 100 if SMOKE else int(os.environ.get("RECALL50_MAX_TREES", 1000))
+CHECKPOINT = 50 if SMOKE else int(os.environ.get("RECALL50_CHECKPOINT", 100))
 ROUND_TREES = 25 if SMOKE else 50
 GRID_BUDGET_SECONDS = (6 if SMOKE else 62) * 60  # запас квоты на финальные модели
 CPU_THREADS_PER_GPU = 2  # Kaggle GPU-сессия даёт 4 vCPU на две карты
@@ -97,8 +97,16 @@ LOSSES = {
     "YetiRankPairwise": {"kind": "builtin", "loss_function": "YetiRankPairwise"},
     "YetiRank": {"kind": "builtin", "loss_function": "YetiRank"},
     "QuerySoftMax": {"kind": "builtin", "loss_function": "QuerySoftMax"},
-    "LambdaRecall50_hard": {"kind": "lambda", "tau": 0.0},
-    "LambdaRecall50_soft": {"kind": "lambda", "tau": 8.0},
+    "LambdaRecall50_hard": {"kind": "lambda", "tau": 0.0, "cutoff": 50},
+    "LambdaRecall50_soft": {"kind": "lambda", "tau": 8.0, "cutoff": 50},
+    # Stage 26: in-sample ранги оптимистичны — уже через 100 деревьев все
+    # обучающие positives пула в top-50 и лосс перестаёт учить обобщению.
+    # Поэтому на train требуется запас: cutoff 20/10, либо более мягкая τ=20.
+    "LambdaRecall50_soft_k20": {"kind": "lambda", "tau": 8.0, "cutoff": 20},
+    "LambdaRecall50_soft_k10": {"kind": "lambda", "tau": 8.0, "cutoff": 10},
+    # Этап 2: OOF dev рос монотонно k50 < k20 < k10, поэтому проверяется k5.
+    "LambdaRecall50_soft_k5": {"kind": "lambda", "tau": 8.0, "cutoff": 5},
+    "LambdaRecall50_wide": {"kind": "lambda", "tau": 20.0, "cutoff": 50},
     # Вариант, предложенный ранее (Codex): параметры metric/top проба 25C
     # признаёт игнорируемыми. Оставлен для прямого сравнения; CPU-only.
     "StochasticFilter_RecallAt50": {"kind": "builtin", "cpu_only": True,
@@ -116,9 +124,10 @@ if SMOKE:
 # Kaggle v1 остановлен после первого набора параметров (depth 6, l2 3). По его
 # OOF dev выбран один objective; он досчитывается локально на CPU только на
 # этом наборе — другие depth/l2 для него не оценивались.
+# Stage 26 (локальный тюнинг) задаёт список objectives и индексы PARAMS.
 if os.environ.get("RECALL50_ONLY_LOSS"):
-    LOSSES = {os.environ["RECALL50_ONLY_LOSS"]: LOSSES[os.environ["RECALL50_ONLY_LOSS"]]}
-    PARAMS = PARAMS[:1]
+    LOSSES = {name: LOSSES[name] for name in os.environ["RECALL50_ONLY_LOSS"].split(",")}
+    PARAMS = [PARAMS[int(i)] for i in os.environ.get("RECALL50_PARAMS", "0").split(",")]
 
 
 def locate_input() -> Path:
@@ -302,13 +311,14 @@ def positive_pairs(block: Block) -> np.ndarray:
 class LambdaRecall:
     """LambdaMART with |ΔRecall@50| weights on top of CatBoost PairLogit."""
 
-    def __init__(self, tau: float, params: dict, device: int | None, seed: int):
-        self.tau, self.params, self.device, self.seed = tau, params, device, seed
+    def __init__(self, tau: float, params: dict, device: int | None, seed: int, cutoff: int = K):
+        self.tau, self.params, self.device, self.seed, self.cutoff = tau, params, device, seed, cutoff
 
     def inside_top(self, ranks: np.ndarray) -> np.ndarray:
+        # cutoff < 50 — запас на train: in-sample ранги лучше, чем на новых данных.
         if self.tau == 0:
-            return (ranks <= K).astype(np.float64)
-        return 1.0 / (1.0 + np.exp(-(K + 0.5 - ranks) / self.tau))
+            return (ranks <= self.cutoff).astype(np.float64)
+        return 1.0 / (1.0 + np.exp(-(self.cutoff + 0.5 - ranks) / self.tau))
 
     def fit(self, block: Block, rows: np.ndarray, trees: int) -> "LambdaRecall":
         bag = subset(block, rows)
@@ -353,7 +363,7 @@ class PUBag:
         spec = LOSSES[self.loss]
         self.members = []
         for seed in PU_SEEDS:
-            member = (LambdaRecall(spec["tau"], self.params, self.device, seed)
+            member = (LambdaRecall(spec["tau"], self.params, self.device, seed, spec["cutoff"])
                       if spec["kind"] == "lambda" else
                       Builtin(spec["loss_function"], self.params, self.device, seed))
             self.members.append(member.fit(block, pu_sample(block, seed), trees))

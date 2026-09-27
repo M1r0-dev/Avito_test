@@ -1,0 +1,158 @@
+{
+  "hypothesis": "training cutoff < 50 keeps LambdaRecall50 gradients useful after in-sample saturation",
+  "diagnosis": {
+    "insample_recall_after_100_trees": 0.9265,
+    "pool_ceiling": 0.9265,
+    "held_recall_plateau": [
+      0.8657,
+      0.869
+    ]
+  },
+  "oof_best_per_config": [
+    {
+      "loss": "LambdaRecall50_soft_k10",
+      "depth": 6,
+      "l2_leaf_reg": 3.0,
+      "trees": 100,
+      "dev": 0.869358346927678,
+      "dev_tail": 0.8409090909090909,
+      "stage": "26A"
+    },
+    {
+      "loss": "LambdaRecall50_wide",
+      "depth": 6,
+      "l2_leaf_reg": 3.0,
+      "trees": 150,
+      "dev": 0.8667754214246872,
+      "dev_tail": 0.8352272727272727,
+      "stage": "26A"
+    },
+    {
+      "loss": "LambdaRecall50_soft_k10",
+      "depth": 8,
+      "l2_leaf_reg": 10.0,
+      "trees": 100,
+      "dev": 0.8663675910821097,
+      "dev_tail": 0.8409090909090909,
+      "stage": "26B"
+    },
+    {
+      "loss": "LambdaRecall50_soft_k20",
+      "depth": 6,
+      "l2_leaf_reg": 3.0,
+      "trees": 50,
+      "dev": 0.8663675910821097,
+      "dev_tail": 0.8352272727272727,
+      "stage": "26A"
+    },
+    {
+      "loss": "LambdaRecall50_soft_k10",
+      "depth": 6,
+      "l2_leaf_reg": 10.0,
+      "trees": 100,
+      "dev": 0.8659597607395322,
+      "dev_tail": 0.8409090909090909,
+      "stage": "26B"
+    },
+    {
+      "loss": "LambdaRecall50_soft",
+      "depth": 6,
+      "l2_leaf_reg": 3.0,
+      "trees": 50,
+      "dev": 0.8647362697117997,
+      "dev_tail": 0.8181818181818182,
+      "stage": "26A"
+    },
+    {
+      "loss": "LambdaRecall50_soft_k5",
+      "depth": 6,
+      "l2_leaf_reg": 3.0,
+      "trees": 50,
+      "dev": 0.8646003262642741,
+      "dev_tail": 0.8522727272727273,
+      "stage": "26C"
+    },
+    {
+      "loss": "LambdaRecall50_soft_k10",
+      "depth": 8,
+      "l2_leaf_reg": 3.0,
+      "trees": 50,
+      "dev": 0.8620174007612832,
+      "dev_tail": 0.8238636363636364,
+      "stage": "26B"
+    }
+  ],
+  "selected": {
+    "loss": "LambdaRecall50_soft_k10",
+    "depth": 6,
+    "l2_leaf_reg": 3.0,
+    "trees": 100,
+    "dev": 0.869358346927678,
+    "dev_tail": 0.8409090909090909,
+    "stage": "26A"
+  },
+  "test_vs_attempt4": [
+    {
+      "segment": "test_tail",
+      "candidate_recall": 0.9047619047619048,
+      "baseline_recall": 0.91005291005291,
+      "mean_delta": -0.005291005291005291,
+      "ci_low": -0.037037037037037035,
+      "ci_high": 0.021164021164021163,
+      "p_value_greater": 0.8075096245187741,
+      "n_queries": 189,
+      "wins": 2,
+      "losses": 3
+    },
+    {
+      "segment": "test",
+      "candidate_recall": 0.8625611745513866,
+      "baseline_recall": 0.8612017400761283,
+      "mean_delta": 0.0013594344752582926,
+      "ci_low": -0.010059815116911364,
+      "ci_high": 0.01277868406742795,
+      "p_value_greater": 0.3940802959852007,
+      "n_queries": 1226,
+      "wins": 17,
+      "losses": 15
+    }
+  ],
+  "decision": {
+    "alpha_per_endpoint": 0.0125,
+    "tail_nonnegative": false,
+    "primary_significant": false,
+    "secondary_significant": false,
+    "accepted": false
+  },
+  "vs_first_look_candidate": [
+    {
+      "segment": "test_tail",
+      "candidate_recall": 0.9047619047619048,
+      "baseline_recall": 0.9153439153439153,
+      "mean_delta": -0.010582010582010581,
+      "ci_low": -0.026455026455026454,
+      "ci_high": 0.0,
+      "p_value_greater": 1.0,
+      "n_queries": 189,
+      "wins": 0,
+      "losses": 2
+    },
+    {
+      "segment": "test",
+      "candidate_recall": 0.8625611745513866,
+      "baseline_recall": 0.8665035345296356,
+      "mean_delta": -0.003942359978249048,
+      "ci_low": -0.01046764545948885,
+      "ci_high": 0.0021750951604132683,
+      "p_value_greater": 0.8995550222488875,
+      "n_queries": 1226,
+      "wins": 6,
+      "losses": 11
+    }
+  ],
+  "candidate": {
+    "file": "answer_recall50_margin_candidate.csv",
+    "sha256": "7476c720dce6ee883ea889ac33d2d2aecda87060de8d06d633af3b4c150f1e61",
+    "benchmark_overlap_with_attempt6": 0.8751957585644372
+  }
+}
