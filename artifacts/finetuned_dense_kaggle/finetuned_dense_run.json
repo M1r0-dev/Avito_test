@@ -1,0 +1,26 @@
+{
+  "stage": "retrieval_only",
+  "base_model": "deepvk/USER-bge-m3",
+  "license": "apache-2.0",
+  "training": {
+    "pairs": 17033,
+    "steps": 851,
+    "mean_loss": 0.19852259254747057,
+    "elapsed_seconds": 529.9881013109999,
+    "lora_rank": 16,
+    "learning_rate": 0.0002,
+    "temperature": 0.03,
+    "trainable_parameters": 2359296,
+    "world_size": 2
+  },
+  "items": 189212,
+  "passages": 554920,
+  "queries": 4904,
+  "chunk_words": 140,
+  "overlap": 30,
+  "max_chunks": 4,
+  "gpus": [
+    "Tesla T4",
+    "Tesla T4"
+  ]
+}

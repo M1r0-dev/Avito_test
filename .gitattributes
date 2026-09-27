@@ -1,0 +1,6 @@
+# Binary artefacts needed to run the final solution are stored with Git LFS
+# (run `git lfs install` before cloning, or `git lfs pull` after).
+artifacts/**/*.parquet filter=lfs diff=lfs merge=lfs -text
+artifacts/**/*.npz filter=lfs diff=lfs merge=lfs -text
+artifacts/**/*.joblib filter=lfs diff=lfs merge=lfs -text
+models/*.cbm filter=lfs diff=lfs merge=lfs -text

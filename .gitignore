@@ -1,7 +1,24 @@
-# Raw competition data and generated model artefacts are local-only.
+# Raw competition data stays local: put the three task parquet files here.
 dataset/*.parquet
-artifacts/
-models/
+
+# Generated artefacts are local-only, except what the final solution needs.
+# Those are tracked with Git LFS (see .gitattributes and README).
+artifacts/*
+!artifacts/bm25/
+!artifacts/validation/
+!artifacts/rankings/
+artifacts/rankings/*
+!artifacts/rankings/bm25_rankings.parquet
+!artifacts/dense_kaggle/
+artifacts/dense_kaggle/*
+!artifacts/dense_kaggle/dense_rankings.parquet
+!artifacts/dense_kaggle/dense_run.json
+!artifacts/finetuned_dense_kaggle/
+artifacts/finetuned_dense_kaggle/*
+!artifacts/finetuned_dense_kaggle/finetuned_dense_rankings.parquet
+!artifacts/finetuned_dense_kaggle/finetuned_dense_run.json
+models/*
+!models/learned_fusion_attempt3.cbm
 
 # Keep lightweight reports, but ignore regenerated binary figures.
 reports/figures/*.png
@@ -19,6 +36,8 @@ venv/
 .idea/
 .vscode/
 
-# Generated submissions except the requested final file in the project root.
-submissions/
+# Intermediate submissions are local; the archive of files sent to the
+# platform (submissions/attempt_*.csv) and the root answer.csv are tracked.
+submissions/*
+!submissions/attempt_*.csv
 answer_*.csv

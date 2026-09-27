@@ -1,0 +1,16 @@
+{
+  "models": [
+    "deepvk/USER-bge-m3",
+    "intfloat/multilingual-e5-small"
+  ],
+  "items": 189212,
+  "passages": 554920,
+  "queries": 4904,
+  "chunk_words": 140,
+  "overlap": 30,
+  "max_chunks": 4,
+  "gpus": [
+    "Tesla T4",
+    "Tesla T4"
+  ]
+}
