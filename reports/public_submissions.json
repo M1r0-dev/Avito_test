@@ -98,6 +98,26 @@
         "test_tail": -0.072824,
         "test_all": -0.023973
       }
+    },
+    {
+      "attempt": 5,
+      "name": "bm25_lora_v2_selector_ablation",
+      "method": "CatBoost candidate selector over BM25 and LoRA v2 only; zero-shot BGE-M3 and LoRA v1 removed, while filters, lexical overlaps, location and item priors are unchanged",
+      "notebook": "notebooks/19_lora_v2_evaluation.ipynb",
+      "commit": "1f58c0342b22075dc7e3381f9f7d2ea5c5e4437c",
+      "file": "answer.csv -> submissions/attempt_5_bm25_lora_v2_selector.csv",
+      "sha256": "cf2d10c38cace1e28325ab974c65bb6537c185dde268331e70ab4df9e2821347",
+      "offline": {
+        "holdout": "test half of the stratified train holdout",
+        "recall_at_50_test_tail": 0.8835978835978836,
+        "recall_at_50_test_all": 0.8565116911364872
+      },
+      "public_recall_at_50": 0.829627,
+      "public_delta_vs_attempt_4": -0.007602,
+      "offline_to_public_gap": {
+        "test_tail": -0.053971,
+        "test_all": -0.026885
+      }
     }
   ]
 }

@@ -45,6 +45,7 @@ LFS, файлы в `artifacts/` будут текстовыми указател
 | 2 | RRF BM25 + zero-shot dense + fine-tuned dense, `1 / 0.75 / 1.25` | 14 | `a7ce7dc` | test-tail `0.86243`, test `0.83238` | **0.821129** |
 | 3 | те же каналы, learned fusion (CatBoost по рангам и token overlap) вместо RRF | 17 | `7993fa6` | test-tail `0.90476`, test `0.84448` | **0.824331** |
 | 4 | BM25 + zero-shot + LoRA v1 + LoRA v2, candidate selector | 19–20 | `51282ff` | test-tail `0.91005`, test `0.86120` | **0.837229** |
+| 5 | BM25 + LoRA v2, candidate selector (абляция) | 19 | `1f58c03` | test-tail `0.88360`, test `0.85651` | **0.829627** |
 
 Отказ от LTR и click history поднял публичный Recall@50 на `+0.12276`, а
 разрыв offline→public сократился с `−0.161` до `−0.041`. Это согласуется с
