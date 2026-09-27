@@ -19,9 +19,15 @@ Notebooks — основной источник экспериментальны
    Они не включаются в основной pipeline без статистически подтверждённого
    прироста на зафиксированном holdout.
 6. `notebooks/07_supervised_ltr_experiments.ipynb` — supervised selection из
-   широкого union; текущий принятый результат `0.84058` на test.
+   широкого union; исходный принятый результат `0.84058` на test.
 7. `notebooks/08_finetuned_dense_experiments.ipynb` — оценка leakage-safe LoRA
    domain adaptation русского USER-bge-m3 после Kaggle-прогона.
+8. `notebooks/09_click_history_retrieval.ipynb` — char n-gram retrieval по
+   leakage-safe click history; канал улучшает RRF, но отклонён внутри LTR.
+9. `notebooks/10_history_ltr_experiments.ipynb`–`12_ltr_objective_experiments.ipynb`
+   — отрицательные абляции расширения pool, history-features и ranking losses.
+10. `notebooks/13_finetuned_dense_ltr_experiments.ipynb` — принятая замена
+    zero-shot dense на адаптированный канал; текущий test Recall@50 `0.85954`.
 
 SPLADE-stage использует русский checkpoint `naver/neuclir22-splade-ru` и
 контролируемые абляции pruning, chunking и global/local retrieval. Лицензия
@@ -113,6 +119,13 @@ validation query signatures. На test Recall@50 вырос с `0.80920` до `0
 paired delta `+0.03138`, 98.75% CI `[0.01054; 0.05279]`, `p=0.00025` при
 скорректированном пороге `0.0125`. Результат принят и записан в `answer.csv`,
 но до исследовательской цели `0.9` остаётся `0.05942`.
+
+Leakage-safe LoRA дообучение USER-bge-m3 на 17 033 уникальных training items
+подняло dense-only Recall@50 с `0.76281` до `0.79976`. Замена zero-shot dense
+на fine-tuned dense внутри той же трёхканальной LTR-схемы улучшила текущий
+лучший результат с `0.84058` до `0.85954`: paired delta `+0.01896`, 99.5% CI
+`[0.00116; 0.03732]`, randomization `p=0.00175` при пороге `0.005`.
+Результат принят и записан в `answer.csv`; до цели `0.9` осталось `0.04046`.
 
 ## Лицензии внешних моделей
 
