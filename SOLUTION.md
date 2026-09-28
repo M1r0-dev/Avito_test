@@ -1,177 +1,157 @@
-# Решение Avito candidate retrieval
+# Avito: кандидатогенерация под Recall@50 — финальное решение
 
-Финальный файл — `answer.csv`. Репозиторий содержит полный исследовательский
-pipeline: EDA, фиксированный validation split, retrieval-эксперименты,
-статистические тесты, GPU-notebooks и learned candidate selector.
+Документ для проверяющего: что сдано, как это проверить за несколько минут и
+почему выбран каждый шаг. Все числа ссылаются на notebook/отчёт, где их можно
+перепроверить; все сравнения — парные статистические тесты на одних и тех же
+запросах.
 
-Решается только первая стадия каскада — кандидатогенерация: 50 кандидатов с
-максимальным Recall@50 передаются дальше, на ранжирование. Ранжирование вне
-рамки задачи. Ограничения — Recall@50 и latency guardrail `p95 ≤ 500 ms` на
-ноутбуке / `≤ 100 ms` на GPU при batch=1.
+## 1. Коротко
 
-## Данные и признаки
+- **Сдаётся** `answer.csv` = публичная попытка 6, sha256 `27705d5…`,
+  public Recall@50 **0.836972**.
+- **Рамка**: только первая стадия каскада — 50 кандидатов с максимальным
+  Recall@50 для следующего ранжирующего этапа; re-ranking вне задачи.
+- **Offline** (test-половина holdout, 1 226 запросов): Recall@50 **0.86120**;
+  на редких запросах (test-tail, 189 запросов, ≈ профиль benchmark) **0.91005**.
+- **Latency guardrail** (ноутбук, warm p95 ≤ 500 ms, batch=1): пройден —
+  p95 **398 ms** (раздел 6).
 
-Используются все доступные признаки запроса и объявления:
+```
+query ─┬─ BM25 (filtered + plain)                  ─┐
+       ├─ USER-bge-m3 zero-shot → exact global/local ─┼─ union top-100 → RRF top-200
+       └─ USER-bge-m3 LoRA v2   → exact global/local ─┘        │
+                                                               ▼
+           33 признака (ранги каналов, token overlap, локация, приоры объявления)
+                                                               ▼
+           3 PU-bagged CatBoost (YetiRankPairwise) → средний 1/(20+rank) → top-50
+```
 
-- `search_query` и `search_infm_params_text` формируют текст запроса;
-- title, параметры и description объявления формируют документы;
-- `search_category` применяется как hard filter, кроме значения `0`;
-- location используется двумя каналами — global и local, потому что 16.9%
-  положительных train-пар находятся в разных локациях;
-- требование минимального рейтинга извлекается из текста фильтра и применяется
-  как hard constraint;
-- цена, рейтинг, отзывы, координаты, доступность телефона/сообщений, совпадения
-  токенов и leakage-safe click counts используются LTR-моделью.
+## 2. Как проверить
 
-EDA показал, что description и параметры часто длинные. Поэтому объявление
-представляется максимум четырьмя фиксированными passages по 140 слов с overlap
-30, после чего passage ranks сворачиваются в уникальные `item_id`. Отдельный
-language hard filter отклонён: корпус уже на 99.87% кириллический, а удаление
-латиницы теряет бренды и смешанные названия.
+Нужны три parquet задачи в `dataset/` и `git lfs pull` (ranking-артефакты и
+модели лежат в LFS). GPU и сеть не нужны.
 
-## Модели и текущий submission
+| Что проверяется | Команда | Ожидаемо |
+|---|---|---|
+| финальный `answer.csv` воспроизводится из артефактов | `python scripts/generate_answer.py --check` | sha256 `27705d5bc6a6…`, ~2 мин CPU |
+| модели selector обучаются заново бит-в-бит | `python scripts/train_pu_selector.py --verify-export artifacts/recall50_kaggle_input/c2_validation.parquet`¹ | признаки = notebook 19, те же `.cbm` |
+| unit-тесты | `pytest` | зелёные |
+| latency online-пути | `python scripts/export_onnx_encoder.py` и `python scripts/benchmark_final_latency.py --encoder onnx` ² | раздел 6 |
 
-1. BM25 ищет lexical candidates по title, parameters и description.
-2. Русский `deepvk/USER-bge-m3` представлен zero-shot каналом и двумя LoRA:
-   v1 на 17 033 парах и v2 на 457 439 leakage-safe уникальных query-item парах.
-   Все validation query signatures исключены до обучения.
-3. Каждый bi-encoder строит global и location-local rankings по 554 920
-   passages на двух Tesla T4; v2 сохраняет также FP16 passage/query vectors.
-4. Лёгкий CatBoost candidate selector выбирает 50 items из union top-100 BM25,
-   zero-shot, LoRA v1 и LoRA v2. Используются только ranks, token overlap,
-   location match и item priors — click history исключена.
-5. RRF-only с теми же каналами сохранён как интерпретируемый контроль:
-   test-tail/test `0.89947/0.84652` против `0.91005/0.86120` у selector.
-   SPLADE не входит в submission, потому что его прямой прирост не прошёл gate.
+¹ Экспорт создаёт `notebooks/25a_recall50_export_pool.ipynb`; без флага
+скрипт просто обучает модели из LFS-артефактов.
+² Нужны FP16 passage vectors LoRA v2 (`kaggle kernels output
+m1r0tvorxc/avito-lora-v2-dense-retrieval -p artifacts/finetuned_v2_kaggle`) и
+merged LoRA v2 (`kaggle kernels output m1r0tvorxc/avito-user-bge-m3-lora-v2`),
+экспортированный командой `python scripts/export_onnx_encoder.py --model
+<путь к merged-модели> --revision "" --output artifacts/onnx/lora_v2`.
 
-Open-source зависимости: pandas, NumPy, scikit-learn, SentenceTransformers,
-PEFT, PyTorch, CatBoost и PyArrow. Внешние inference API не используются.
-`USER-bge-m3` имеет Apache-2.0; исследованный SPLADE checkpoint
-`naver/neuclir22-splade-ru` — CC BY-NC-SA 4.0.
+Ключевые файлы: `src/avito_retrieval/pu_selector.py` (признаки и ансамбль),
+`src/avito_retrieval/dense_search.py` (точный CPU-поиск),
+`src/avito_retrieval/onnx_encoder.py`, `scripts/generate_answer.py`,
+`reports/public_submissions.json` (журнал попыток с sha256).
 
-## Проверка качества
+## 3. Валидация: почему числам можно доверять и где их предел
 
-Из train создан фиксированный стратифицированный holdout на 2 452 query
-signatures. Он делится на dev/test; параметры выбираются только на dev. Все
-сравнения выполняются по одинаковым запросам с paired bootstrap confidence
-interval и односторонним sign-randomization test. Порог значимости уменьшается
-с учётом последовательных model-family экспериментов.
+- **Holdout.** Из train выделены 2 452 query signatures со стратификацией
+  (notebook 02), разделены пополам на dev и test. Все validation-сигнатуры
+  исключены из обучения dense-моделей и click-history до обучения.
+- **Выбор только на dev.** Гиперпараметры и конфигурации выбираются по
+  2-fold out-of-fold оценке на dev; test смотрится один раз на гипотезу.
+- **Тесты.** Paired bootstrap CI + односторонний sign-randomization test по
+  per-query Recall@50 (`avito_retrieval.statistics.paired_recall_test`),
+  Bonferroni по endpoints и повторным просмотрам test. Отрицательные
+  результаты тоже закоммичены отдельными notebooks.
+- **Shift.** 62.6% текстов benchmark не встречаются в train, 72% имеют
+  частоту ≤ 1; в holdout таких 15%. Поэтому primary endpoint — test-tail.
+- **Предел.** Holdout оптимистичен (public ниже offline на 0.02–0.07), а при
+  ~1.1 relevant на запрос разрешение test около ±0.01: эффекты меньше этого
+  статистически не отличимы. Это главный ограничитель дальнейшего тюнинга.
 
-Offline-оценка первой LTR-попытки:
-
-- прежний zero-shot dense LTR: Recall@50 `0.84058`;
-- fine-tuned dense LTR: Recall@50 `0.85954`;
-- paired delta `+0.01896`;
-- 99.5% CI `[0.00116; 0.03732]`;
-- randomization `p=0.00175` при threshold `0.005`.
-
-Фактический Recall@50 первой загруженной попытки — **`0.698370`**. Разрыв
-с offline-оценкой явно указан: train-derived holdout переоценивает перенос на
-benchmark. Вероятные причины — shift запросов/объявлений, переоценка head-query
-и popularity/history сигналов, а также многократная последовательная адаптация
-к одному holdout. Это ограничение текущей validation-схемы, а не форматная
-ошибка submission. Аудит после этой попытки показал: 62.64% benchmark query
-texts не встречаются в train, 72.27% имеют train frequency `<=1`, тогда как в
-holdout tail занимает только 14.89%. Кроме того, category `0` составляет 9.05%
-benchmark против 0.08% holdout.
-
-Текущий shift-aware RRF выбран на dev-tail. На независимом test-tail его
-Recall@50 равен `0.86243` против `0.84656` у BM25+fine. Paired delta `+0.01587`,
-99.375% CI `[-0.02646; 0.06349]`, `p=0.253`: внутреннее улучшение не доказано,
-поэтому это явно обозначено как контролируемая публичная проверка переноса.
-
-Фактический Recall@50 второй попытки — **`0.821129`**:
-
-| Попытка | Offline Recall@50 | Public Recall@50 | Разрыв |
+| # | Метод | Offline test-tail / test | Public |
 |---|---|---|---|
-| 1. Fine-tuned dense LTR | test `0.85954` | `0.698370` | `−0.161` |
-| 2. Shift-aware RRF | test-tail `0.86243`, test `0.83238` | `0.821129` | `−0.041` / `−0.011` |
+| 1 | LTR + click history | — / 0.85954 | 0.698370 |
+| 2 | RRF BM25 + zero-shot + LoRA v1 | 0.86243 / 0.83238 | 0.821129 |
+| 3 | learned fusion (CatBoost по рангам) | 0.90476 / 0.84448 | 0.824331 |
+| 4 | + LoRA v2, selector (4 канала) | 0.91005 / 0.86120 | 0.837229 |
+| 5 | абляция BM25 + LoRA v2 | 0.88360 / 0.85651 | 0.829627 |
+| **6** | **BM25 + zero-shot + LoRA v2, PU selector** | **0.91005 / 0.86120** | **0.836972** |
 
-Публичный прирост `+0.12276` подтверждает направление shift-гипотезы: supervised
-LTR с popularity/history переобучался на head-запросы holdout. Прирост
-относится ко всей замене LTR/history на RRF. Отдельный вклад весов
-`1 / 0.75 / 1.25` не измерялся, потому что на benchmark нет разметки и каждая
-попытка ограничена. Оставшийся разрыв означает, что holdout по-прежнему не
-моделирует benchmark: category `0` (9.05% benchmark) и тексты, не встречавшиеся
-в train (62.64%), в нём почти отсутствуют. Журнал попыток с sha256 —
-`reports/public_submissions.json`.
+## 4. Шаги pipeline и их обоснование
 
-## Найденные ошибки и принятые решения
+1. **Текст запроса и hard filters** (notebooks 03, 05). Запрос = query +
+   текст фильтров; категория (кроме `0`) и минимальный рейтинг — жёсткие
+   фильтры. Локация **не** жёсткая: 16.9% positive train-пар в другой
+   локации, поэтому каждый канал ищет global и location-local и сливает их RRF.
+2. **BM25** по title, параметрам и описанию — сильный lexical baseline для
+   брендов/моделей; `bm25_plain` (без фильтров) — дополнительный признак.
+3. **Zero-shot `deepvk/USER-bge-m3`** (notebook 05). Объявление режется на ≤ 4
+   passages по 140 слов (длинные описания размывают один вектор), passages
+   сворачиваются в items. Лицензия Apache-2.0.
+4. **LoRA v2 того же encoder** (Kaggle 10A/10B, notebook 19): 457 439
+   leakage-safe пар, маска ложных негативов. Канал против LoRA v1: test
+   Recall@50 0.8268 против 0.7998, `+0.027`, p = 0.0004.
+5. **Пул** — union top-100 каналов, обрезанный до RRF top-200 (notebooks 22,
+   24): pool Recall@200 0.921 на test и 0.974 на test-tail. Узкое место —
+   сжатие 200 → 50, а не поиск.
+6. **Selector** (notebooks 17, 19, 24) — лёгкий CatBoost по рангам каналов,
+   token overlap, совпадению локации и приорам объявления; click history
+   исключена после попытки 1 (переобучение на head-запросы). Selector против
+   RRF тех же каналов: test 0.86120 против 0.84652.
+7. **PU-bagging и отказ от LoRA v1** (notebooks 23, 24). Непрокликанные
+   объявления — unlabeled, а не негативы, поэтому каждый из трёх bags берёт
+   все positives и 48 unlabeled (2/3 hard). Сам по себе PU **не доказан**
+   (notebook 23: +0.0106 на tail, p = 0.31). Без LoRA v1 обычный selector
+   (C2, notebook 19) отставал от попытки 4 на test-tail на один запрос
+   (0.90476 против 0.91005); с PU-bagging и пулом top-200 он совпал с ней
+   (tail 0 побед / 0 поражений, test 0.86120), public −0.000257. Разница в
+   пределах шума, поэтому решающим аргументом за попытку 6 была latency: на
+   один 568M-encoder меньше при том же offline Recall@50.
 
-- Location hard filter терял межрегиональные positives — заменён global/local
-  retrieval каналами.
-- Russian-only filter не дал прироста и терял mixed-script объявления —
-  отклонён.
-- Длинные документы ухудшали единичное dense-представление — введено
-  фиксированное chunking с item-level collapse.
-- Первый DDP fine-tuning завис на параллельной загрузке checkpoint и достиг
-  12-часового лимита Kaggle — модель скачивается один раз, ranks загружают её
-  локально и последовательно, обучение и retrieval разделены.
-- Kaggle `torchao 0.10` конфликтовал с Transformers — неиспользуемый optional
-  пакет удаляется перед PEFT training.
-- History-expanded pool, history-only LTR features и альтернативные ranking
-  objectives ухудшили test Recall и были отклонены.
-- LTR улучшал исходный holdout, но публичный результат выявил covariate shift;
-  текущий submission исключает CatBoost и history, уменьшая зависимость от
-  head-query train distribution.
-- Итоговый CSV отдельно проверен на точное покрытие query, 50 уникальных corpus
-  IDs, lowercase hex-формат и отсутствие индексной колонки.
-- Аудит воспроизводимости на чистом clone нашёл два дефекта. Notebook 03 читал
-  `item_language.parquet`, который не создавался кодом репозитория: генерация
-  восстановлена в `scripts/build_bm25.py` и даёт побайтно тот же файл. Notebook
-  14 архивировал первую попытку копированием текущего `answer.csv`, поэтому на
-  чистом checkout сохранял туда ответ notebook 05: теперь источник — явный
-  выход notebook 13 `answer_finetuned_dense_ltr.csv`.
-- Был начат zero-shot cross-encoder этап (`BAAI/bge-reranker-v2-m3`, 568M) над
-  пулом ~200 кандидатов. Это ошибка рамки: cross-encoder — ранжирование, то
-  есть следующая стадия каскада, а по латентности он не проходит guardrail на
-  два порядка (на CPU ~3.4 пары/с, то есть порядка минуты на запрос). Kernel
-  отменён до получения результатов, код удалён; решения по нему не принимались.
-- End-to-end замер показал, что сама попытка 2 не проходит CPU guardrail:
-  p95 `811.6 ms` против `500 ms`, из них ~590 ms — два прохода 568M
-  query encoder (`reports/LATENCY.md`).
-- Закоммиченный `kaggle/finetune_train_gpu.py` фиксирует ревизию
-  `deepvk/USER-bge-m3` `0cc6cfe…`, но исполненная Kaggle-версия 08a скачивала
-  модель без явной ревизии. Это та же ревизия: head репозитория модели не
-  менялся с 2024-07-18.
+## 5. Что проверено и отклонено
 
-## Воспроизведение
+| Гипотеза | Результат | Где |
+|---|---|---|
+| LTR + click history | offline +, public 0.698: переобучение на head/popularity | 13, 14 |
+| SPLADE (`neuclir22-splade-ru`) | прямой прирост не прошёл gate | 06, 07 |
+| Multi-view dense (query-only, title+params) | tail не улучшен, отклонено | 21 |
+| Cross-encoder re-ranker | вне рамки (это ранжирование) и ~мин/запрос на CPU | — |
+| Встроенный Recall@k objective CatBoost | `LambdaMart`/`StochasticRank`/`YetiRank` отвергают `RecallAt`; `StochasticFilter:metric=RecallAt;top=50` молча игнорирует параметры (FilteredDCG), OOF dev 0.847 | 25C |
+| LambdaMART c весами \|ΔRecall@50\| (свой objective) | test +0.0053 и на tail, и на test, p = 0.50 / 0.15 — не принято | 25A–C |
+| Он же с запасом на train (cutoff 10) | OOF dev +0.007, но test-tail −0.0053, test +0.0014 (α = .0125) — не перенеслось | 26A–D |
 
-1. Положить три исходных parquet в `dataset/`, как описано в
-   `dataset/README.md`.
-2. Установить окружение:
+Про собственный objective: диагностика показала, что при in-sample весах все
+обучающие positives пула попадают в top-50 уже через 100 деревьев, после чего
+лосс перестаёт учить обобщению; запас на train это исправил на dev, но не на
+test. Вывод: на этом holdout разница между objectives меньше его разрешения.
 
-   ```bash
-   python -m venv .venv
-   source .venv/bin/activate
-   pip install -e '.[dev]'
-   pytest
-   ```
+## 6. Latency
 
-3. Построить BM25 artifacts (`PYTHONPATH=src python scripts/build_bm25.py`),
-   затем выполнить локальные notebooks `01`–`03`.
-4. Запустить `kaggle/04_dense_gpu_experiment.ipynb`, скачать output через
-   `scripts/fetch_kaggle_output.sh`, затем выполнить notebook `05`.
-   Все четыре Kaggle kernels публичны. Без собственного GPU-прогона их
-   сохранённые выходы скачиваются без Kaggle-аккаунта командой
-   `python scripts/fetch_public_kaggle_outputs.py --splade` с проверкой sha256.
-   Этот путь нужен для бит-в-бит воспроизведения: повторное LoRA-обучение на
-   2×T4 не детерминировано.
-5. Запустить SPLADE GPU notebook `kaggle/splade/06_splade_gpu_experiment.ipynb`,
-   скачать output и выполнить локальные notebooks `06` и `07`.
-6. Запустить `kaggle/finetune/08a_finetune_train_gpu.ipynb`, затем зависимый
-   `kaggle/finetune_retrieval/08b_finetuned_dense_retrieval.ipynb`. Скачать
-   rankings командой `scripts/fetch_finetuned_dense_output.sh`.
-7. Выполнить notebooks `08`, `12` и `13`. Notebook `12` материализует
-   зафиксированную zero-shot control pair table; notebook `13` обучает
-   fine-tuned dense LTR первой попытки.
-8. Выполнить `notebooks/14_distribution_shift_robust_rrf.ipynb`: он измеряет
-   shift, выбирает RRF на dev-tail, проводит paired-тест на test-tail, сохраняет
-   предыдущую попытку и воспроизводит текущий `answer.csv`.
+Guardrail ноутбука (Intel Core Ultra 7 155H, CPU, batch=1, 500 запросов):
+**p50 282 ms, p95 398 ms, p99 471 ms** — пройден (`reports/LATENCY.md`).
 
-Ключевой финальный notebook:
-`notebooks/14_distribution_shift_robust_rrf.ipynb`. Все random seeds,
-chunking parameters, split и CatBoost iterations сохранены в коде и reports.
-Минимальный путь до текущего `answer.csv` (build_bm25 → 02 → fetch → 05 → 14)
-и результаты проверки на чистом clone с хешами описаны в
-`reports/REPRODUCIBILITY.md`.
+| Конфигурация online-пути | p50 / p95 | Почему Recall@50 не меняется |
+|---|---|---|
+| исходная: PyTorch encoders, последовательно | 584 / 872 ms | — |
+| PyTorch, три retrieval-ветки параллельно | 461 / 649 ms | top-50 идентичен на всех 500 запросах |
+| **финальная**: ONNX Runtime fp32 encoders + параллельные ветки + бюджет потоков | **282 / 398 ms** | ORT: косинус к PyTorch ≥ 0.9999992, online v2 non-inferior (test +0.0019, CI [0, 0.0046], tail 0/0, notebook 28); CPU-поиск вместо GPU fp16 non-inferior (notebook 27); потоки меняют только расписание |
+
+Главный выигрыш — ONNX Runtime (encode p50 ~210 → ~80–115 ms). Бюджет
+потоков (ORT/MKL/CatBoost по 4, `KMP_BLOCKTIME=0`) — страховка от
+переподписки ядер между ветками; его отдельный эффект не выделен: без него
+parallel в одном из окон дал p95 278 ms, но прогоны шли в разных условиях.
+
+Хвост на этом ноутбуке зависит от памяти: при заполненном swap первые
+~1 500 запросов после загрузки индексов дают p95 > 1 s, после этого оба
+режима проходят; в отчёте приведены все 12 прогонов, включая неудачные.
+Попутно найдена ошибка интеграции (префикс `"query: "` у dense-запроса,
+−0.006 Recall@50), исправлена `dense_query_text`.
+
+## 7. Ограничения
+
+- Holdout не моделирует benchmark полностью (category `0`, новые тексты),
+  поэтому offline-приросты систематически больше публичных.
+- Zero-shot passage vectors не сохранялись: CPU-поиск проверен на LoRA v2
+  (тот же код), zero-shot в latency-замере — случайная матрица той же формы.
+- Latency измерена на ноутбуке с фоновыми процессами (IDE, браузер); хвост
+  p99 чувствителен к ним.

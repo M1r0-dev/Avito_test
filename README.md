@@ -14,28 +14,29 @@
 в [`SOLUTION.md`](SOLUTION.md), проверка воспроизводимости — в
 [`reports/REPRODUCIBILITY.md`](reports/REPRODUCIBILITY.md).
 
-## Быстрый запуск воспроизводимой попытки 3
+## Быстрый запуск финального решения (попытка 6)
 
-Нужен [Git LFS](https://git-lfs.com): индекс BM25, rankings каналов и модель
-fusion (~394 MB) хранятся в репозитории через LFS. GPU, Kaggle и сеть не нужны.
+Нужен [Git LFS](https://git-lfs.com): индекс BM25, rankings каналов и модели
+selector хранятся в репозитории через LFS. GPU, Kaggle и сеть не нужны.
 
 ```bash
 git lfs install
 git clone https://github.com/M1r0-dev/Avito_test.git && cd Avito_test
 # положить benchmark_queries.parquet и benchmark_items.parquet из архива задачи в dataset/
 python -m venv .venv && source .venv/bin/activate && pip install -e .
-python scripts/generate_answer.py --check   # ~1.5 мин на CPU
+python scripts/generate_answer.py --check   # ~2 мин на CPU
 ```
 
-Скрипт строит пул кандидатов из сохранённых каналов (BM25, zero-shot и LoRA
-USER-bge-m3), считает признаки learned fusion, применяет сохранённую модель
-`models/learned_fusion_attempt3.cbm`, пишет `answer.csv`, проверяет формат
+Скрипт берёт сохранённые rankings BM25, zero-shot и LoRA v2 USER-bge-m3,
+строит RRF top-200 пул, считает признаки selector
+(`src/avito_retrieval/pu_selector.py`), применяет три PU-bagged модели
+`models/pu_selector_seed{41,42,43}.cbm`, пишет `answer.csv`, проверяет формат
 submission и sha256. `--check` падает, если файл отличается от отправленной
-попытки 3 (`c24bf119…`, public `0.824331`). Упаковка нового лучшего решения
-LoRA v2 выполняется после фиксации качества; его исследовательский путь —
-notebooks 19 и 20. Если репозиторий склонирован без
-LFS, файлы в `artifacts/` будут текстовыми указателями — выполните
-`git lfs pull`.
+попытки 6 (`27705d5…`, public `0.836972`). Модели переобучаются командой
+`python scripts/train_pu_selector.py`. Попытка 3 воспроизводится отдельно:
+`python scripts/generate_attempt3_answer.py --check`. Если репозиторий
+склонирован без LFS, файлы в `artifacts/` будут текстовыми указателями —
+выполните `git lfs pull`.
 
 ## Публичные попытки
 
@@ -101,6 +102,12 @@ Notebooks — основной источник экспериментальны
     objective в CatBoost нет: `StochasticFilter` игнорирует `metric=RecallAt`).
     Test `+0.0053` к attempt 4 и на tail, и на всём test, но незначимо
     (p `0.50` / `0.15`), поэтому не принято.
+17. `notebooks/26a…26d` — тот же objective с запасом на train (cutoff 10):
+    OOF dev `+0.007`, но на test не перенеслось (tail `−0.0053`), отклонено.
+18. `notebooks/27_online_cpu_dense_fidelity.ipynb` и
+    `notebooks/28_onnx_encoder_equivalence.ipynb` — online-путь под latency
+    guardrail (CPU exact search + ONNX Runtime encoder) не хуже offline attempt 6
+    (non-inferiority, граница `−0.005`); latency — `reports/LATENCY.md`.
 
 SPLADE-stage использует русский checkpoint `naver/neuclir22-splade-ru` и
 контролируемые абляции pruning, chunking и global/local retrieval. Лицензия
@@ -119,10 +126,14 @@ notebooks и batch inference.
 фильтры, LTR features, CatBoost и fusion; startup, загрузка индексов и сеть
 измеряются отдельно. Конфигурация лежит в `config/latency_guardrails.json`.
 
-Первый формальный замер оптимизированного one-pass BM25: `p95=128.59 ms` на
-Intel Core Ultra 7 155H, 500 запросов. Полный end-to-end guardrail пока имеет
-статус `partial`: dense GPU и LTR будут добавлены после стабилизации fine-tuned
-канала. Запуск: `PYTHONPATH=src python scripts/benchmark_latency.py`.
+Финальное решение (попытка 6) проходит guardrail на Intel Core Ultra 7 155H:
+**p50 282 ms, p95 398 ms, p99 471 ms** (CPU, 500 запросов). Для этого query
+encoder переведён на ONNX Runtime fp32 без квантизации, три retrieval-ветки
+выполняются параллельно, потоки распределены явно. Recall@50 online-пути не
+хуже offline-оценки (non-inferiority, notebooks 27–28). Все прогоны, включая
+неудачные, и влияние заполненного swap — в [`reports/LATENCY.md`](reports/LATENCY.md).
+Запуск: `python scripts/benchmark_final_latency.py --encoder onnx --threads 4
+--blas-threads 4 --catboost-threads 4 --modes parallel`.
 
 ## Ключевые решения EDA
 
