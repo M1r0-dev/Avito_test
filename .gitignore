@@ -24,6 +24,7 @@ artifacts/finetuned_v2_kaggle/*
 models/*
 !models/learned_fusion_attempt3.cbm
 !models/pu_selector_seed*.cbm
+!models/recall50_seed*_round*.cbm
 
 # Keep lightweight reports, but ignore regenerated binary figures.
 reports/figures/*.png

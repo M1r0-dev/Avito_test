@@ -39,3 +39,24 @@ def test_ensemble_averages_ranks_and_breaks_ties_by_fused() -> None:
     # tie above y, and the tie goes to the lower fused rank (x).
     top = ensemble_top50(frame, [Constant([3, 2, 1]), Constant([1, 2, 3])])
     assert top["q"] == ["x", "z", "y"]
+
+
+def test_recall_lambda_ranks_break_ties_by_fused_and_bags_keep_positives() -> None:
+    from avito_retrieval.recall_lambda import pu_rows, within_query_ranks
+
+    group = np.array([0, 0, 0, 1, 1])
+    first_row = np.array([0, 3])
+    fused = np.array([1, 2, 3, 1, 2])
+    ranks = within_query_ranks(group, first_row, fused, np.array([0.5, 0.5, 0.9, 0.0, 0.0]))
+    assert ranks.tolist() == [2, 3, 1, 1, 2]
+
+    rows = 120
+    frame = pd.DataFrame({
+        "query_key": ["q"] * rows, "fused": np.arange(1, rows + 1),
+        "label": [1, 0, 1] + [0] * (rows - 3),
+        "bm25": np.arange(1, rows + 1), "zero": 501, "v2": 501,
+    })
+    bag = pu_rows(frame, seed=41)
+    assert {0, 2} <= set(bag.tolist())            # every positive is kept
+    assert len(bag) == 2 + 48                     # plus the unlabeled budget
+    assert np.array_equal(bag, pu_rows(frame, seed=41))
