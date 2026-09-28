@@ -83,12 +83,18 @@
         "recall_at_50_test_all": 0.8612017400761283,
         "vs_actual_attempt_3_test_tail": {
           "delta": 0.005291005291005291,
-          "ci_98_333": [-0.026455026455026454, 0.037037037037037035],
+          "ci_98_333": [
+            -0.026455026455026454,
+            0.037037037037037035
+          ],
           "p": 0.5022748862556872
         },
         "vs_actual_attempt_3_test_all": {
           "delta": 0.016721044045676998,
-          "ci_98_333": [0.004893964110929853, 0.02936378466557912],
+          "ci_98_333": [
+            0.004893964110929853,
+            0.02936378466557912
+          ],
           "p": 0.0007999600019999
         }
       },
@@ -139,8 +145,34 @@
       "public_delta_vs_attempt_5": 0.007345,
       "offline_to_public_gap": {
         "test_tail": -0.073081,
-        "test_all": -0.024230
+        "test_all": -0.02423
       }
+    },
+    {
+      "attempt": 7,
+      "name": "recall50_lambda_objective",
+      "method": "Attempt-6 system (BM25 + zero-shot BGE-M3 + LoRA v2, RRF top-200, three PU bags) with the selector objective replaced: LambdaMART with |dRecall@50| pair weights over CatBoost PairLogit (soft cutoff tau=8), depth 6, l2 3, 100 trees selected on OOF dev",
+      "notebook": "notebooks/25c_recall50_objective_gate.ipynb",
+      "commit": "8f88b21",
+      "file": "submissions/attempt_7_recall50_lambda_objective.csv (answer.csv keeps attempt 6 until the result)",
+      "sha256": "994ef6f382202168e2a3a0bb6cc7673823a503af47b6d5b88e231e99d2ad7f0c",
+      "offline": {
+        "holdout": "test half of the stratified train holdout",
+        "recall_at_50_test_tail": 0.9153439153439153,
+        "recall_at_50_test_all": 0.8665035345296356,
+        "vs_attempt_4_test_tail": {
+          "delta": 0.005291005291005291,
+          "p": 0.4968251587420629
+        },
+        "vs_attempt_4_test_all": {
+          "delta": 0.005301794453507341,
+          "p": 0.15414229288535572
+        },
+        "gate_accepted": false
+      },
+      "benchmark_top50_overlap_with_attempt_6": 0.8422185970636215,
+      "why_submitted": "last public attempt spent on the best offline point estimate (+0.0053 on test and test-tail) although the internal gate was not significant; the notebook-26 margin variant was not submitted because it was worse on test",
+      "public_recall_at_50": null
     }
   ]
 }
