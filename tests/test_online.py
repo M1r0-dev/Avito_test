@@ -30,7 +30,7 @@ def test_ensemble_averages_ranks_and_breaks_ties_by_fused() -> None:
         def __init__(self, scores: list[float]) -> None:
             self.scores = np.asarray(scores)
 
-        def predict(self, _: pd.DataFrame) -> np.ndarray:
+        def predict(self, _: pd.DataFrame, thread_count: int = -1) -> np.ndarray:
             return self.scores
 
     frame = pd.DataFrame(0, index=range(3), columns=FEATURES)

@@ -132,13 +132,18 @@ def build_features(queries: pd.DataFrame, key_column: str,
     return frame.sort_values(["query_key", "fused"], kind="stable").reset_index(drop=True)
 
 
-def ensemble_top50(frame: pd.DataFrame, models: Sequence[CatBoostRanker]) -> dict[str, list[str]]:
-    """Mean reciprocal rank of the PU-bag models; ties broken by `fused` (notebook 24)."""
+def ensemble_top50(frame: pd.DataFrame, models: Sequence[CatBoostRanker],
+                   thread_count: int = -1) -> dict[str, list[str]]:
+    """Mean reciprocal rank of the PU-bag models; ties broken by `fused` (notebook 24).
+
+    `thread_count` only bounds CatBoost's prediction threads in the online path;
+    it does not change the scores.
+    """
     work = frame[["query_key", "item_id", "fused"]].copy()
     features = frame[FEATURES]
     scores = []
     for model in models:
-        work["raw"] = model.predict(features)
+        work["raw"] = model.predict(features, thread_count=thread_count)
         ranks = work.groupby("query_key", sort=False).raw.rank(method="first", ascending=False)
         scores.append(1.0 / (RR_OFFSET + ranks.to_numpy()))
     work["score"] = np.mean(scores, axis=0)

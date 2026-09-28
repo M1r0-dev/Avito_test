@@ -17,9 +17,12 @@ MAX_LENGTH = 256  # queries are short (p95 26 tokens); the Kaggle kernels encode
 
 
 class OnnxQueryEncoder:
-    def __init__(self, directory: Path, threads: int) -> None:
+    def __init__(self, directory: Path, threads: int, allow_spinning: bool = True) -> None:
         options = ort.SessionOptions()
         options.intra_op_num_threads = threads
+        # Spinning trades idle CPU for latency; with several concurrent branches
+        # it steals cores from the other branch, so the online path disables it.
+        options.add_session_config_entry("session.intra_op.allow_spinning", "1" if allow_spinning else "0")
         options.inter_op_num_threads = 1
         options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_ENABLE_ALL
         self.session = ort.InferenceSession(str(directory / "encoder_opt.onnx"), options,

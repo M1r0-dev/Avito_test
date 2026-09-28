@@ -1,0 +1,367 @@
+{
+  "status": "measured_cpu",
+  "pipeline": "attempt 6: BM25 + zero-shot + LoRA v2 USER-bge-m3, RRF top-200, PU CatBoost selector, top-50",
+  "notes": [
+    "LoRA v2 searches the real saved passage vectors; zero-shot index is a random unit matrix of the real shape",
+    "onnx: real merged LoRA v2 export for the v2 branch; torch: base weights for both (same architecture)",
+    "encoder=onnx, threads per encoder=4, BLAS threads=4, CatBoost threads=4, KMP_BLOCKTIME=0"
+  ],
+  "protocol": {
+    "include": [
+      "query_normalization",
+      "query_encoding",
+      "all_accepted_retrieval_channels",
+      "hard_filters",
+      "ltr_feature_building",
+      "catboost_prediction",
+      "fusion_and_top50"
+    ],
+    "exclude": [
+      "process_startup",
+      "model_and_index_loading",
+      "network_transport"
+    ],
+    "warmup_queries": 25,
+    "cuda_synchronize_before_and_after_timing": true,
+    "report": [
+      "mean_ms",
+      "p50_ms",
+      "p95_ms",
+      "p99_ms",
+      "max_ms"
+    ],
+    "warmup_queries_used": 1500
+  },
+  "hardware": {
+    "platform": "Linux-7.0.0-34-generic-x86_64-with-glibc2.39",
+    "python": "3.13.5",
+    "cpu": {
+      "lscpu": [
+        {
+          "field": "Architecture:",
+          "data": "x86_64"
+        },
+        {
+          "field": "CPU op-mode(s):",
+          "data": "32-bit, 64-bit"
+        },
+        {
+          "field": "Address sizes:",
+          "data": "46 bits physical, 48 bits virtual"
+        },
+        {
+          "field": "Byte Order:",
+          "data": "Little Endian"
+        },
+        {
+          "field": "CPU(s):",
+          "data": "22"
+        },
+        {
+          "field": "On-line CPU(s) list:",
+          "data": "0-21"
+        },
+        {
+          "field": "Vendor ID:",
+          "data": "GenuineIntel"
+        },
+        {
+          "field": "Model name:",
+          "data": "Intel(R) Core(TM) Ultra 7 155H"
+        },
+        {
+          "field": "CPU family:",
+          "data": "6"
+        },
+        {
+          "field": "Model:",
+          "data": "170"
+        },
+        {
+          "field": "Thread(s) per core:",
+          "data": "2"
+        },
+        {
+          "field": "Core(s) per socket:",
+          "data": "16"
+        },
+        {
+          "field": "Socket(s):",
+          "data": "1"
+        },
+        {
+          "field": "Stepping:",
+          "data": "4"
+        },
+        {
+          "field": "CPU(s) scaling MHz:",
+          "data": "30%"
+        },
+        {
+          "field": "CPU max MHz:",
+          "data": "4800.0000"
+        },
+        {
+          "field": "CPU min MHz:",
+          "data": "400.0000"
+        },
+        {
+          "field": "BogoMIPS:",
+          "data": "5990.40"
+        },
+        {
+          "field": "Flags:",
+          "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush dts acpi mmx fxsr sse sse2 ss ht tm pbe syscall nx pdpe1gb rdtscp lm constant_tsc art arch_perfmon pebs bts rep_good nopl xtopology nonstop_tsc cpuid aperfmperf tsc_known_freq pni pclmulqdq dtes64 monitor ds_cpl vmx smx est tm2 ssse3 sdbg fma cx16 xtpr pdcm pcid sse4_1 sse4_2 x2apic movbe popcnt tsc_deadline_timer aes xsave avx f16c rdrand lahf_lm abm 3dnowprefetch cpuid_fault epb ssbd ibrs ibpb stibp ibrs_enhanced tpr_shadow flexpriority ept vpid ept_ad fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid rdseed adx smap clflushopt clwb intel_pt sha_ni xsaveopt xsavec xgetbv1 xsaves split_lock_detect user_shstk avx_vnni dtherm ida arat pln pts hwp hwp_notify hwp_act_window hwp_epp hwp_pkg_req hfi vnmi umip pku ospke waitpkg gfni vaes vpclmulqdq rdpid bus_lock_detect movdiri movdir64b fsrm md_clear serialize arch_lbr ibt flush_l1d arch_capabilities"
+        },
+        {
+          "field": "Virtualization:",
+          "data": "VT-x"
+        },
+        {
+          "field": "L1d cache:",
+          "data": "544 KiB (14 instances)"
+        },
+        {
+          "field": "L1i cache:",
+          "data": "896 KiB (14 instances)"
+        },
+        {
+          "field": "L2 cache:",
+          "data": "18 MiB (9 instances)"
+        },
+        {
+          "field": "L3 cache:",
+          "data": "24 MiB (1 instance)"
+        },
+        {
+          "field": "NUMA node(s):",
+          "data": "1"
+        },
+        {
+          "field": "NUMA node0 CPU(s):",
+          "data": "0-21"
+        },
+        {
+          "field": "Vulnerability Gather data sampling:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Ghostwrite:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Indirect target selection:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Itlb multihit:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability L1tf:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Mds:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Meltdown:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Mmio stale data:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Old microcode:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Reg file data sampling:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Retbleed:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Spec rstack overflow:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Spec store bypass:",
+          "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+        },
+        {
+          "field": "Vulnerability Spectre v1:",
+          "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+        },
+        {
+          "field": "Vulnerability Spectre v2:",
+          "data": "Mitigation; Enhanced / Automatic IBRS; IBPB conditional; PBRSB-eIBRS Not affected; BHI BHI_DIS_S"
+        },
+        {
+          "field": "Vulnerability Srbds:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Tsa:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Tsx async abort:",
+          "data": "Not affected"
+        },
+        {
+          "field": "Vulnerability Vmscape:",
+          "data": "Mitigation; IBPB before exit to userspace"
+        }
+      ]
+    },
+    "gpu": []
+  },
+  "modes": {
+    "sequential": {
+      "stages": {
+        "bm25": {
+          "n": 500,
+          "mean_ms": 20.582158482,
+          "p50_ms": 19.247728000000002,
+          "p95_ms": 36.721343949999984,
+          "p99_ms": 42.912628129999995,
+          "max_ms": 79.142341
+        },
+        "encode_zero": {
+          "n": 500,
+          "mean_ms": 83.573439092,
+          "p50_ms": 78.99705449999999,
+          "p95_ms": 125.15513074999993,
+          "p99_ms": 160.57303025999988,
+          "max_ms": 222.41701
+        },
+        "search_zero": {
+          "n": 500,
+          "mean_ms": 63.089764026000005,
+          "p50_ms": 57.1309655,
+          "p95_ms": 119.74945265,
+          "p99_ms": 124.62171389999999,
+          "max_ms": 132.62008
+        },
+        "encode_v2": {
+          "n": 500,
+          "mean_ms": 84.679402822,
+          "p50_ms": 81.6196285,
+          "p95_ms": 127.17894239999994,
+          "p99_ms": 151.85559319999996,
+          "max_ms": 204.833408
+        },
+        "search_v2": {
+          "n": 500,
+          "mean_ms": 64.389301972,
+          "p50_ms": 58.171153000000004,
+          "p95_ms": 119.16087189999998,
+          "p99_ms": 122.83692228999999,
+          "max_ms": 128.937512
+        },
+        "features": {
+          "n": 500,
+          "mean_ms": 13.599440923999998,
+          "p50_ms": 13.3331925,
+          "p95_ms": 17.351576749999992,
+          "p99_ms": 22.60914815,
+          "max_ms": 48.160113
+        },
+        "selector": {
+          "n": 500,
+          "mean_ms": 10.83673444,
+          "p50_ms": 10.693241,
+          "p95_ms": 14.164911349999993,
+          "p99_ms": 17.65681952999999,
+          "max_ms": 39.110807
+        }
+      },
+      "end_to_end": {
+        "n": 500,
+        "mean_ms": 341.00928948800004,
+        "p50_ms": 330.266338,
+        "p95_ms": 453.9232794499999,
+        "p99_ms": 529.06573965,
+        "max_ms": 628.942571,
+        "guardrail_p95_ms": 500.0,
+        "passes_guardrail": true
+      }
+    },
+    "parallel": {
+      "stages": {
+        "bm25": {
+          "n": 500,
+          "mean_ms": 38.699621274,
+          "p50_ms": 35.6058965,
+          "p95_ms": 77.98249435,
+          "p99_ms": 93.28390415999996,
+          "max_ms": 109.519087
+        },
+        "encode_zero": {
+          "n": 500,
+          "mean_ms": 123.90727005400001,
+          "p50_ms": 114.687418,
+          "p95_ms": 218.11634965,
+          "p99_ms": 271.55309815000004,
+          "max_ms": 281.664713
+        },
+        "search_zero": {
+          "n": 500,
+          "mean_ms": 115.72134933200002,
+          "p50_ms": 111.7034525,
+          "p95_ms": 176.52923604999998,
+          "p99_ms": 208.61106110999998,
+          "max_ms": 233.544545
+        },
+        "encode_v2": {
+          "n": 500,
+          "mean_ms": 128.344632084,
+          "p50_ms": 119.3927725,
+          "p95_ms": 217.31410589999996,
+          "p99_ms": 275.92422205,
+          "max_ms": 336.544429
+        },
+        "search_v2": {
+          "n": 500,
+          "mean_ms": 117.35870518200001,
+          "p50_ms": 112.34925899999999,
+          "p95_ms": 176.53829294999997,
+          "p99_ms": 215.37534066999993,
+          "max_ms": 232.041528
+        },
+        "features": {
+          "n": 500,
+          "mean_ms": 18.790331935999998,
+          "p50_ms": 17.826728,
+          "p95_ms": 25.700562349999984,
+          "p99_ms": 33.52116154,
+          "max_ms": 37.441266
+        },
+        "selector": {
+          "n": 500,
+          "mean_ms": 14.962616042000002,
+          "p50_ms": 14.524608,
+          "p95_ms": 19.827501899999998,
+          "p99_ms": 25.603728659999998,
+          "max_ms": 28.121495
+        }
+      },
+      "end_to_end": {
+        "n": 500,
+        "mean_ms": 291.39937670800003,
+        "p50_ms": 281.52541499999995,
+        "p95_ms": 397.72894594999997,
+        "p99_ms": 470.8512996699999,
+        "max_ms": 507.537885,
+        "guardrail_p95_ms": 500.0,
+        "passes_guardrail": true
+      }
+    }
+  },
+  "identical_top50_across_modes": true
+}
