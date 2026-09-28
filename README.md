@@ -48,6 +48,7 @@ submission и sha256. `--check` падает, если файл отличает
 | 4 | BM25 + zero-shot + LoRA v1 + LoRA v2, candidate selector | 19–20 | `51282ff` | test-tail `0.91005`, test `0.86120` | **0.837229** |
 | 5 | BM25 + LoRA v2, candidate selector (абляция) | 19 | `1f58c03` | test-tail `0.88360`, test `0.85651` | **0.829627** |
 | 6 | BM25 + zero-shot + LoRA v2, PU selector; без LoRA v1 | 24 | `55ac93d` | test-tail `0.91005`, test `0.86120` | **0.836972** |
+| 7 | попытка 6 + Recall@50 lambda objective внутри PU bags | 25 | `8f88b21` | test-tail `0.91534`, test `0.86650` | **0.840831** |
 
 Отказ от LTR и click history поднял публичный Recall@50 на `+0.12276`, а
 разрыв offline→public сократился с `−0.161` до `−0.041`. Это согласуется с
