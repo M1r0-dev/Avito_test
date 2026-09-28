@@ -1,6 +1,6 @@
 {
-  "id": "m1r0tvorxc/avito-recall50-selector-objective",
-  "title": "Avito Recall50 Selector Objective",
+  "id": "m1r0tvorxc/recall50-selector-objective",
+  "title": "Recall50 Selector Objective",
   "code_file": "25b_recall50_selector_gpu.ipynb",
   "language": "python",
   "kernel_type": "notebook",

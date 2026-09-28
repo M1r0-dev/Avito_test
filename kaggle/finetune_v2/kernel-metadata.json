@@ -1,6 +1,6 @@
 {
-  "id": "m1r0tvorxc/avito-user-bge-m3-lora-v2",
-  "title": "Avito USER BGE M3 LoRA v2",
+  "id": "m1r0tvorxc/user-bge-m3-lora-v2",
+  "title": "USER BGE M3 LoRA v2",
   "code_file": "10a_finetune_v2_train_gpu.ipynb",
   "language": "python",
   "kernel_type": "notebook",

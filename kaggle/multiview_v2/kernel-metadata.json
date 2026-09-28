@@ -1,6 +1,6 @@
 {
-  "id": "m1r0tvorxc/avito-lora-v2-multi-view-retrieval",
-  "title": "Avito LoRA v2 Multi-view Retrieval",
+  "id": "m1r0tvorxc/lora-v2-multi-view-retrieval",
+  "title": "LoRA v2 Multi-view Retrieval",
   "code_file": "21a_multiview_v2_gpu.ipynb",
   "language": "python",
   "kernel_type": "notebook",
@@ -12,8 +12,8 @@
   "dataset_sources": ["m1r0tvorxc/avito-candidate-data"],
   "competition_sources": [],
   "kernel_sources": [
-    "m1r0tvorxc/avito-user-bge-m3-lora-v2",
-    "m1r0tvorxc/avito-lora-v2-dense-retrieval"
+    "m1r0tvorxc/user-bge-m3-lora-v2",
+    "m1r0tvorxc/lora-v2-dense-retrieval"
   ],
   "model_sources": []
 }

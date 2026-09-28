@@ -1,6 +1,6 @@
 {
-  "id": "m1r0tvorxc/avito-russian-splade-candidate-retrieval",
-  "title": "Avito Russian SPLADE Candidate Retrieval",
+  "id": "m1r0tvorxc/russian-splade-candidate-retrieval",
+  "title": "Russian SPLADE Candidate Retrieval",
   "code_file": "06_splade_gpu_experiment.ipynb",
   "language": "python",
   "kernel_type": "notebook",

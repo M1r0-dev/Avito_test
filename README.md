@@ -181,7 +181,7 @@ pytest
 выходы GPU-этапов скачиваются с Kaggle. GPU-этапы выполнены публичными
 Kaggle kernels:
 [zero-shot dense](https://www.kaggle.com/code/m1r0tvorxc/avito-russian-dense-candidate-retrieval),
-[SPLADE](https://www.kaggle.com/code/m1r0tvorxc/avito-russian-splade-candidate-retrieval),
+[SPLADE](https://www.kaggle.com/code/m1r0tvorxc/russian-splade-candidate-retrieval),
 [LoRA training](https://www.kaggle.com/code/m1r0tvorxc/avito-user-bge-m3-domain-adaptation),
 [fine-tuned retrieval](https://www.kaggle.com/code/m1r0tvorxc/avito-finetuned-dense-retrieval).
 Их выходы скачиваются без Kaggle-аккаунта и сверяются по sha256. Повторное

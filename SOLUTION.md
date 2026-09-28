@@ -41,8 +41,8 @@ query ─┬─ BM25 (filtered + plain)                  ─┐
 ¹ Экспорт создаёт `notebooks/25a_recall50_export_pool.ipynb`; без флага
 скрипт просто обучает модели из LFS-артефактов.
 ² Нужны FP16 passage vectors LoRA v2 (`kaggle kernels output
-m1r0tvorxc/avito-lora-v2-dense-retrieval -p artifacts/finetuned_v2_kaggle`) и
-merged LoRA v2 (`kaggle kernels output m1r0tvorxc/avito-user-bge-m3-lora-v2`),
+m1r0tvorxc/lora-v2-dense-retrieval -p artifacts/finetuned_v2_kaggle`) и
+merged LoRA v2 (`kaggle kernels output m1r0tvorxc/user-bge-m3-lora-v2`),
 экспортированный командой `python scripts/export_onnx_encoder.py --model
 <путь к merged-модели> --revision "" --output artifacts/onnx/lora_v2`.
 

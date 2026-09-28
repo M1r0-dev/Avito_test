@@ -41,7 +41,7 @@ KERNELS: dict[str, tuple[str, dict[str, str]]] = {
         "finetuned_dense_run.json": "1c4c4b3d95fc7a0ff43eb4200afaa2002e4a24fcca52b935d963d8a268f5518e",
         "validation_labels.parquet": "8eaf3015aa4602aa14e14320aaf98de701987beed98fee0a18d60485a53db6cc",
     }),
-    "avito-russian-splade-candidate-retrieval": ("artifacts/splade_kaggle", {
+    "russian-splade-candidate-retrieval": ("artifacts/splade_kaggle", {
         "splade_rankings.parquet": "535576a255b74baaacbb1456a4b17a1d1d5130d1bace90bea2bcdc776278fc41",
         "splade_run.json": "991695407f6104c6f349f60ef729d7460ca5621879f6194471539980087733a9",
         "validation_labels.parquet": "8eaf3015aa4602aa14e14320aaf98de701987beed98fee0a18d60485a53db6cc",
@@ -105,7 +105,7 @@ def main() -> None:
     args = parser.parse_args()
     slugs = ["avito-russian-dense-candidate-retrieval", "avito-finetuned-dense-retrieval"]
     if args.splade:
-        slugs.append("avito-russian-splade-candidate-retrieval")
+        slugs.append("russian-splade-candidate-retrieval")
     if not all([fetch(slug) for slug in slugs]):
         sys.exit("Some kernel outputs are missing or differ from the submitted version.")
 
