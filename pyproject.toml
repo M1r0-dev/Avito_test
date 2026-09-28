@@ -23,6 +23,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["jupyterlab>=4", "pytest>=8", "ruff>=0.6"]
+# Online path / latency benchmark only (ONNX export and ONNX Runtime encoder);
+# not needed to reproduce answer.csv.
+latency = ["onnx>=1.16", "onnxruntime>=1.18", "onnxscript>=0.1", "threadpoolctl>=3"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

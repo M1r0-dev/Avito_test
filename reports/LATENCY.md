@@ -24,6 +24,8 @@ selector совпадает с offline на test и test-tail (notebook 29).
 Команда (нужны `fetch_public_kaggle_outputs.py --online` и два ONNX-экспорта):
 
 ```bash
+pip install -e '.[latency]'
+python scripts/fetch_public_kaggle_outputs.py --online
 python scripts/export_onnx_encoder.py
 python scripts/export_onnx_encoder.py --model artifacts/lora_v2_model/user_bge_m3_avito_v2 \
     --revision "" --output artifacts/onnx/lora_v2
