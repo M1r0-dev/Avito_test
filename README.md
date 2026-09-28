@@ -14,7 +14,7 @@
 в [`SOLUTION.md`](SOLUTION.md), проверка воспроизводимости — в
 [`reports/REPRODUCIBILITY.md`](reports/REPRODUCIBILITY.md).
 
-## Быстрый запуск финального решения (попытка 6)
+## Быстрый запуск финального решения (попытка 7)
 
 Нужен [Git LFS](https://git-lfs.com): индекс BM25, rankings каналов и модели
 selector хранятся в репозитории через LFS. GPU, Kaggle и сеть не нужны.
@@ -29,12 +29,16 @@ python scripts/generate_answer.py --check   # ~2 мин на CPU
 
 Скрипт берёт сохранённые rankings BM25, zero-shot и LoRA v2 USER-bge-m3,
 строит RRF top-200 пул, считает признаки selector
-(`src/avito_retrieval/pu_selector.py`), применяет три PU-bagged модели
-`models/pu_selector_seed{41,42,43}.cbm`, пишет `answer.csv`, проверяет формат
+(`src/avito_retrieval/pu_selector.py`), применяет три PU-bagged модели,
+обученные Recall@50-лоссом (`models/recall50_seed{41,42,43}_round{1,2}.cbm`,
+`src/avito_retrieval/recall_lambda.py`), пишет `answer.csv`, проверяет формат
 submission и sha256. `--check` падает, если файл отличается от отправленной
-попытки 6 (`27705d5…`, public `0.836972`). Модели переобучаются командой
-`python scripts/train_pu_selector.py`. Попытка 3 воспроизводится отдельно:
-`python scripts/generate_attempt3_answer.py --check`. Если репозиторий
+попытки 7 (`994ef6f3…`, public `0.840831`). Модели переобучаются командой
+`python scripts/train_pu_selector.py` и дают тот же sha. Предыдущие финалы
+воспроизводятся отдельно: попытка 6 —
+`python scripts/generate_answer.py --objective yetirank --check --output /tmp/a6.csv`,
+попытка 3 — `python scripts/generate_attempt3_answer.py --check`. Откуда взят
+каждый входной файл — [`reports/REPRODUCIBILITY.md`](reports/REPRODUCIBILITY.md). Если репозиторий
 склонирован без LFS, файлы в `artifacts/` будут текстовыми указателями —
 выполните `git lfs pull`.
 
@@ -54,12 +58,14 @@ submission и sha256. `--check` падает, если файл отличает
 разрыв offline→public сократился с `−0.161` до `−0.041`. Это согласуется с
 гипотезой covariate shift из notebook 14, но holdout всё ещё оптимистичен.
 
-Текущий `answer.csv` — попытка 6 (`27705d5…`), public `0.836972`. Она выбрана
-как финальная инженерная конфигурация, хотя попытка 4 выше на `0.000257`:
-попытка 6 сохраняет тот же offline Recall@50 (`0.91005` test-tail, `0.86120`
-test), но полностью удаляет LoRA v1 и сокращает число тяжёлых dense query
-encoder/search стадий с трёх до двух. Финальный retrieval использует BM25,
-zero-shot BGE-M3 и LoRA v2; top-200 сжимается PU-bagged selector до top-50.
+Текущий `answer.csv` — попытка 7 (`994ef6f3…`), public **`0.840831`**, лучшая
+из семи. Это система попытки 6 (BM25 + zero-shot BGE-M3 + LoRA v2, RRF top-200,
+три PU-bagged CatBoost), в которой selector обучен собственным Recall@50-лоссом
+(LambdaMART с весами `|ΔRecall@50|`, notebook 25). Offline прирост к попытке 6
+`+0.0053` на test и test-tail был незначим (p `0.15` / `0.50`), публичная
+проверка его подтвердила: `+0.003859`. Попытка 6 в своё время заменила
+попытку 4 при том же offline Recall@50, убрав LoRA v1 (на один 568M-encoder
+меньше в online-пути).
 Все предыдущие файлы сохранены в `submissions/attempt_*.csv`.
 Журнал с sha256 файлов:
 [`reports/public_submissions.json`](reports/public_submissions.json).
@@ -101,13 +107,16 @@ Notebooks — основной источник экспериментальны
     `notebooks/25c_recall50_objective_gate.ipynb` — замена `YetiRankPairwise`
     внутри PU bags на LambdaMART с весами `|ΔRecall@50|` (встроенного Recall@k
     objective в CatBoost нет: `StochasticFilter` игнорирует `metric=RecallAt`).
-    Test `+0.0053` к attempt 4 и на tail, и на всём test, но незначимо
-    (p `0.50` / `0.15`), поэтому не принято.
+    Test `+0.0053` к attempt 4 и на tail, и на всём test, но offline незначимо
+    (p `0.50` / `0.15`); отправлено последней публичной попыткой и
+    подтвердилось — public `0.840831` (`+0.0039`). **Это финальное решение
+    (попытка 7).**
 17. `notebooks/26a…26d` — тот же objective с запасом на train (cutoff 10):
     OOF dev `+0.007`, но на test не перенеслось (tail `−0.0053`), отклонено.
 18. `notebooks/27_online_cpu_dense_fidelity.ipynb` и
     `notebooks/28_onnx_encoder_equivalence.ipynb` — online-путь под latency
-    guardrail (CPU exact search + ONNX Runtime encoder) не хуже offline attempt 6
+    guardrail (CPU exact search + ONNX Runtime encoder) не хуже offline-оценки;
+    notebook 29 — то же для финального selector попытки 7
     (non-inferiority, граница `−0.005`); latency — `reports/LATENCY.md`.
 
 SPLADE-stage использует русский checkpoint `naver/neuclir22-splade-ru` и
