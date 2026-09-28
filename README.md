@@ -111,8 +111,9 @@ Notebooks — основной источник экспериментальны
     (p `0.50` / `0.15`); отправлено последней публичной попыткой и
     подтвердилось — public `0.840831` (`+0.0039`). **Это финальное решение
     (попытка 7).**
-17. `notebooks/26a…26d` — тот же objective с запасом на train (cutoff 10):
-    OOF dev `+0.007`, но на test не перенеслось (tail `−0.0053`), отклонено.
+17. `notebooks/26a…26d` — попытка улучшить его запасом на train (cutoff 10 вместо 50):
+    OOF dev `+0.007`, но на test не перенеслось (tail `−0.0053`), отклонено;
+    в финал (попытка 7) вошёл вариант с cutoff 50 из п. 16.
 18. `notebooks/27_online_cpu_dense_fidelity.ipynb` и
     `notebooks/28_onnx_encoder_equivalence.ipynb` — online-путь под latency
     guardrail (CPU exact search + ONNX Runtime encoder) не хуже offline-оценки;
