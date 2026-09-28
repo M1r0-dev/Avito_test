@@ -1,0 +1,34 @@
+{
+  "selector": "attempt 7 (Recall@50 lambda objective, models/recall50_seed*_round*.cbm)",
+  "non_inferiority_margin": -0.005,
+  "alpha_one_sided": 0.025,
+  "test": [
+    {
+      "segment": "test_tail",
+      "online": 0.9153439153439153,
+      "offline": 0.9153439153439153,
+      "mean_delta": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "p_value_greater": 1.0,
+      "n_queries": 189,
+      "wins": 0,
+      "losses": 0,
+      "non_inferior": true
+    },
+    {
+      "segment": "test",
+      "online": 0.8665035345296356,
+      "offline": 0.8665035345296356,
+      "mean_delta": 0.0,
+      "ci_low": 0.0,
+      "ci_high": 0.0,
+      "p_value_greater": 1.0,
+      "n_queries": 1226,
+      "wins": 0,
+      "losses": 0,
+      "non_inferior": true
+    }
+  ],
+  "benchmark_top50_overlap_with_answer_csv": 0.9912724306688417
+}
