@@ -12,12 +12,24 @@
 
 Машиночитаемый контракт: `config/latency_guardrails.json`.
 
-## Финальное решение (попытка 6): guardrail пройден
+## Финальное решение (попытка 7): guardrail пройден по контракту
 
-**Итог:** online-путь попытки 6 на Intel Core Ultra 7 155H (CPU, batch=1,
-500 benchmark-запросов, seed 42) — **p50 282 ms, p95 398 ms, p99 471 ms**
-в финальной конфигурации (прогон F, parallel). Ответ online-пути не хуже
-offline-оценки попытки 6 по Recall@50 (notebooks 27, 28).
+**Итог:** online-путь попытки 7 на Intel Core Ultra 7 155H (CPU, batch=1,
+500 benchmark-запросов, seed 42, warm-up 25 — ровно по контракту, parallel
+замерен первым сразу после загрузки): **p50 176 ms, p95 357 ms, p99 682 ms**
+(`reports/latency_final_cpu_attempt7_gcfreeze.json`). Sequential-режим того же
+процесса: p50 291, p95 419, p99 475 ms. Recall@50 online-пути с финальным
+selector совпадает с offline на test и test-tail (notebook 29).
+
+Команда (нужны `fetch_public_kaggle_outputs.py --online` и два ONNX-экспорта):
+
+```bash
+python scripts/export_onnx_encoder.py
+python scripts/export_onnx_encoder.py --model artifacts/lora_v2_model/user_bge_m3_avito_v2 \
+    --revision "" --output artifacts/onnx/lora_v2
+python scripts/benchmark_final_latency.py --encoder onnx --threads 4 --blas-threads 4 \
+    --catboost-threads 4 --gc-freeze --modes parallel
+```
 
 Что измеряется (`scripts/benchmark_final_latency.py`): BM25 (filtered + plain),
 два query encoder USER-bge-m3 (zero-shot и LoRA v2) с точным global/local
@@ -34,13 +46,32 @@ top-50. LoRA v2 ищет по настоящим сохранённым вект
 | Encoder через ONNX Runtime fp32 с fused attention/GELU/LayerNorm (`scripts/export_onnx_encoder.py`) | encode p50 ~210 → ~75–115 ms | те же веса, без квантизации: косинус к PyTorch ≥ 0.9999992; весь online v2 (ORT + CPU-поиск) non-inferior к offline: test +0.0019, 97.5% CI [0, 0.0046], tail 0/0 (notebook 28) |
 | Точный CPU-поиск: одно произведение на global и local | local без второго matmul | CPU fp32 против GPU fp16: non-inferior, test +0.0016, tail 0/0 (notebook 27) |
 | Бюджет потоков: ORT 4, MKL 4, CatBoost 4, `KMP_BLOCKTIME=0`, без spinning | ~9 активных потоков вместо переподписки (2×22 MKL + ORT + CatBoost); отдельный эффект не выделен — прогоны A и F шли в разных условиях окружения | влияет только на расписание потоков |
+| `gc.collect(); gc.freeze()` после загрузки (`--gc-freeze`) | сборщик мусора перестаёт обходить миллионы загруженных объектов (кеш признаков объявлений, BM25): p95 первого окна после загрузки 699 → 357 ms в одинаковых условиях | не касается вычислений |
 
 Попутно найдена ошибка интеграции: dense-каналы Kaggle кодировали запрос без
 префикса `"query: "`, а `query_text` его добавляет (он нужен BM25). С
 префиксом векторы v2 расходились (косинус ~0.93) и test Recall@50 падал на
 0.006; теперь dense-каналы используют `dense_query_text`.
 
-### Все прогоны
+### Прогоны с финальным selector (попытка 7)
+
+Docker-контейнеры остановлены, warm-up 25 по контракту, parallel замерен
+первым после загрузки.
+
+| Конфигурация | Режим | Порядок | p50 | p95 | p99 | ≤ 500 |
+|---|---|---|---|---|---|---|
+| ORT + бюджет потоков | parallel | 1 | 186 | 699 | 845 | ✗ |
+| ORT + бюджет потоков | sequential | 2 | 302 | 419 | 463 | ✓ |
+| **ORT + бюджет потоков + `gc.freeze`** | **parallel** | 1 | **176** | **357** | 682 | ✓ |
+| ORT + бюджет потоков + `gc.freeze` | sequential | 2 | 291 | 419 | 475 | ✓ |
+
+Отчёты: `latency_final_cpu_attempt7.json`, `latency_final_cpu_attempt7_gcfreeze.json`.
+Разница с `gc.freeze` и без — по одному прогону каждого, но в одинаковых
+условиях и того же размера, что и всплески: это согласуется с тем, что
+«плохое первое окно» давали паузы полного прохода GC по объектам, созданным
+при загрузке, а не нехватка памяти.
+
+### Прогоны с selector попытки 6 (история оптимизации)
 
 Каждая строка — 500 измеряемых запросов; «Порядок» — какой по счёту режим в
 процессе после загрузки ~13–16 ГБ индексов и моделей.
@@ -62,23 +93,22 @@ top-50. LoRA v2 ищет по настоящим сохранённым вект
 
 Отчёты: `reports/latency_final_cpu_torch.json`, `latency_final_cpu_onnx*.json`.
 
-**Почему первые окна плохие.** Во время замеров swap ноутбука был заполнен
+**Почему первые окна были плохими (до `gc.freeze`).** Во время этих замеров swap ноутбука был заполнен
 (8/8 ГБ), ~15 ГБ RAM занимали IDE, браузер, neo4j и docker-контейнеры, часть
 которых перезапускалась в цикле. Пока процесс после загрузки вытесняет чужие
 страницы, всплески задевают **все** стадии одновременно, включая CatBoost по
 ~175 строкам, — это остановки процесса, а не медленный код. 25 и даже 500
 warm-up запросов этого не снимали; после ~1 500 (прогон F) оба режима проходят,
 в том числе замеренный первым. Warm-up 1 500 — отклонение от контракта (25),
-оправданное тем, что контракт измеряет warm steady state; production-индекс
-резидентен в памяти. На свободной машине достаточно
-`python scripts/benchmark_final_latency.py --encoder onnx --threads 4
---blas-threads 4 --catboost-threads 4 --modes parallel`.
+оправданное тем, что контракт измеряет warm steady state. Позже выяснилось,
+что главную роль играли паузы GC: с `--gc-freeze` контракт с warm-up 25
+выполняется и для режима, замеренного первым (таблица выше).
 
 **Production.** Guardrail ноутбука выполнен без его ослабления, поэтому
 пересчёт production-бюджета на это железо не понадобился. GPU stretch
 (`≤ 100 ms`) не измерялся: на нём оба encoder и точный поиск переносятся на
 GPU, а CPU-часть (BM25, признаки, CatBoost) занимает ~43 ms p50 в
-sequential-режиме прогона F.
+sequential-режиме.
 
 ## История: BM25 one-pass
 

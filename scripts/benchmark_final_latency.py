@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Warm batch=1 CPU latency of the final candidate generator (public attempt 6).
+"""Warm batch=1 CPU latency of the final candidate generator (public attempt 7).
 
 Online path per query, as in `scripts/generate_answer.py` but starting from
 the raw query instead of saved rankings:
@@ -7,7 +7,10 @@ the raw query instead of saved rankings:
     normalize -> BM25 (filtered + plain) ->
     zero-shot USER-bge-m3: encode -> exact global/local passage search ->
     LoRA v2 USER-bge-m3:   encode -> exact global/local passage search ->
-    RRF top-200 pool -> selector features -> 3 PU CatBoost models -> top-50
+    RRF top-200 pool -> selector features -> 3 PU CatBoost bags -> top-50
+
+`--objective recall50` (default) loads the attempt-7 selector (two 50-tree
+rounds per bag); `--objective yetirank` the attempt-6 one (300 trees per bag).
 
 `--modes sequential` runs the stages one after another; `parallel` runs the
 three independent retrieval branches (BM25, zero-shot, LoRA v2) in threads:
@@ -31,6 +34,7 @@ Recall of the CPU dense path itself is checked in notebook 27.
 from __future__ import annotations
 
 import argparse
+import gc
 import json
 import os
 import sys
@@ -46,7 +50,6 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import torch
-from catboost import CatBoostRanker
 from sentence_transformers import SentenceTransformer
 from threadpoolctl import threadpool_limits
 
@@ -61,10 +64,11 @@ from avito_retrieval.filters import requested_min_rating  # noqa: E402
 from avito_retrieval.learned_fusion import ITEM_COLUMNS, ItemSide  # noqa: E402
 from avito_retrieval.onnx_encoder import MAX_LENGTH, OnnxQueryEncoder  # noqa: E402
 from avito_retrieval.pu_selector import (  # noqa: E402
-    PU_SEEDS, V2_LOCAL_WEIGHT, ZERO_LOCAL_WEIGHT, channel_lists, ensemble_top50, pool_items, query_features,
+    V2_LOCAL_WEIGHT, ZERO_LOCAL_WEIGHT, channel_lists, ensemble_top50, pool_items, query_features,
 )
 from avito_retrieval.text import dense_query_text, query_text  # noqa: E402
 from benchmark_latency import hardware, summarize  # noqa: E402
+from generate_answer import load_models  # noqa: E402
 
 MODEL = "deepvk/USER-bge-m3"
 MODEL_REVISION = "0cc6cfe48e260fb0474c753087a69369e88709ae"
@@ -75,7 +79,8 @@ STAGES = ("bm25", "encode_zero", "search_zero", "encode_v2", "search_v2", "featu
 
 
 class Pipeline:
-    def __init__(self, encoder: str, threads: int, seed: int, blas_threads: int, catboost_threads: int) -> None:
+    def __init__(self, encoder: str, threads: int, seed: int, blas_threads: int, catboost_threads: int,
+                 objective: str) -> None:
         torch.set_num_threads(threads)
         # Thread budget per concurrent branch: encoder `threads`, exact search
         # `blas_threads` (MKL matmul), selector `catboost_threads`. None of these
@@ -106,11 +111,7 @@ class Pipeline:
                     text, normalize_embeddings=True, convert_to_numpy=True))
         raw_items = pd.read_parquet(ROOT / "dataset/benchmark_items.parquet", columns=ITEM_COLUMNS)
         self.item_side = ItemSide.build(raw_items)  # offline item cache, all 189k items
-        self.models = []
-        for seed_ in PU_SEEDS:
-            model = CatBoostRanker()
-            model.load_model(str(ROOT / f"models/pu_selector_seed{seed_}.cbm"))
-            self.models.append(model)
+        self.models = load_models(ROOT / "models", objective)
         self.all_items = np.ones(len(self.items), dtype=bool)
 
     def bm25(self, query: pd.Series, text: str) -> tuple[list[str], list[str], float]:
@@ -180,6 +181,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--samples", type=int, default=500)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--objective", choices=("recall50", "yetirank"), default="recall50")
     parser.add_argument("--encoder", choices=("torch", "onnx"), default="torch")
     parser.add_argument("--threads", type=int, default=16, help="intra-op threads per encoder")
     parser.add_argument("--blas-threads", type=int, default=16, help="MKL threads per exact search")
@@ -189,6 +191,7 @@ def main() -> None:
     # whose swap is full, the first few hundred queries after loading ~16 GB
     # still page memory back in; a longer untimed warm-up measures steady state.
     parser.add_argument("--warmup-queries", type=int, default=None)
+    parser.add_argument("--gc-freeze", action="store_true")
     parser.add_argument("--output", type=Path, default=ROOT / "reports/latency_final_cpu.json")
     args = parser.parse_args()
     guardrails = json.loads((ROOT / "config/latency_guardrails.json").read_text())
@@ -197,18 +200,28 @@ def main() -> None:
     threshold = float(guardrails["research_laptop"]["warm_p95_ms"])
     warmup = args.warmup_queries or int(guardrails["protocol"]["warmup_queries"])
 
-    pipeline = Pipeline(args.encoder, args.threads, args.seed, args.blas_threads, args.catboost_threads)
+    pipeline = Pipeline(args.encoder, args.threads, args.seed, args.blas_threads, args.catboost_threads,
+                        args.objective)
+    if args.gc_freeze:
+        # Loading creates millions of long-lived objects (item feature cache,
+        # BM25 structures); every full cyclic-GC pass walks all of them and
+        # stalls whichever stage is running. Freezing them after loading is
+        # the standard serving fix and does not touch any score.
+        gc.collect()
+        gc.freeze()
     queries = pd.read_parquet(ROOT / "dataset/benchmark_queries.parquet").sample(
         n=args.samples, random_state=args.seed).reset_index(drop=True)
 
     report = {
         "status": "measured_cpu",
-        "pipeline": "attempt 6: BM25 + zero-shot + LoRA v2 USER-bge-m3, RRF top-200, PU CatBoost selector, top-50",
+        "pipeline": ("BM25 + zero-shot + LoRA v2 USER-bge-m3, RRF top-200, PU CatBoost selector "
+                     f"({'attempt 7, Recall@50 lambda' if args.objective == 'recall50' else 'attempt 6, YetiRankPairwise'}), top-50"),
         "notes": [
             "LoRA v2 searches the real saved passage vectors; zero-shot index is a random unit matrix of the real shape",
             "onnx: real merged LoRA v2 export for the v2 branch; torch: base weights for both (same architecture)",
             f"encoder={args.encoder}, threads per encoder={args.threads}, BLAS threads={args.blas_threads}, "
-            f"CatBoost threads={args.catboost_threads}, KMP_BLOCKTIME={os.environ['KMP_BLOCKTIME']}",
+            f"CatBoost threads={args.catboost_threads}, KMP_BLOCKTIME={os.environ['KMP_BLOCKTIME']}, "
+            f"gc.freeze after loading={args.gc_freeze}",
         ],
         "protocol": {**guardrails["protocol"], "warmup_queries_used": warmup},
         "hardware": hardware(), "modes": {},
