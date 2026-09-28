@@ -127,14 +127,13 @@ notebooks и batch inference.
 фильтры, LTR features, CatBoost и fusion; startup, загрузка индексов и сеть
 измеряются отдельно. Конфигурация лежит в `config/latency_guardrails.json`.
 
-Финальное решение (попытка 6) проходит guardrail на Intel Core Ultra 7 155H:
-**p50 282 ms, p95 398 ms, p99 471 ms** (CPU, 500 запросов). Для этого query
-encoder переведён на ONNX Runtime fp32 без квантизации, три retrieval-ветки
-выполняются параллельно, потоки распределены явно. Recall@50 online-пути не
-хуже offline-оценки (non-inferiority, notebooks 27–28). Все прогоны, включая
-неудачные, и влияние заполненного swap — в [`reports/LATENCY.md`](reports/LATENCY.md).
-Запуск: `python scripts/benchmark_final_latency.py --encoder onnx --threads 4
---blas-threads 4 --catboost-threads 4 --modes parallel`.
+Финальное решение (попытка 7) проходит guardrail на Intel Core Ultra 7 155H
+строго по контракту (warm-up 25, 500 запросов, CPU): **p50 176 ms, p95 357 ms,
+p99 682 ms**. Для этого query encoder переведён на ONNX Runtime fp32 без
+квантизации, три retrieval-ветки выполняются параллельно, потоки распределены
+явно, а объекты, загруженные при старте, заморожены для сборщика мусора
+(`gc.freeze`). Recall@50 online-пути совпадает с offline (notebooks 27–29).
+Все прогоны, включая неудачные, — в [`reports/LATENCY.md`](reports/LATENCY.md).
 
 ## Ключевые решения EDA
 
@@ -183,7 +182,9 @@ Kaggle kernels:
 [zero-shot dense](https://www.kaggle.com/code/m1r0tvorxc/avito-russian-dense-candidate-retrieval),
 [SPLADE](https://www.kaggle.com/code/m1r0tvorxc/russian-splade-candidate-retrieval),
 [LoRA training](https://www.kaggle.com/code/m1r0tvorxc/avito-user-bge-m3-domain-adaptation),
-[fine-tuned retrieval](https://www.kaggle.com/code/m1r0tvorxc/avito-finetuned-dense-retrieval).
+[fine-tuned retrieval](https://www.kaggle.com/code/m1r0tvorxc/avito-finetuned-dense-retrieval),
+[LoRA v2 training](https://www.kaggle.com/code/m1r0tvorxc/user-bge-m3-lora-v2),
+[LoRA v2 retrieval](https://www.kaggle.com/code/m1r0tvorxc/lora-v2-dense-retrieval).
 Их выходы скачиваются без Kaggle-аккаунта и сверяются по sha256. Повторное
 LoRA-обучение на GPU не бит-в-бит детерминировано, поэтому точное воспроизведение
 отправленного файла опирается на сохранённые rankings.
